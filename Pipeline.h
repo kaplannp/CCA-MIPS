@@ -31,17 +31,38 @@ namespace pipeline{
       bool checkCyclesRemaining() const;
 
     protected:
+      /* current instruction being executed (Bubble indicates a bubble */
+      std::string instr; 
+      /* name of this PipelinePhase */
       const std::string name;
-      int cyclesRemaining = 0; // The number of cycles left before freed
+      /* The number of cycles left before freed */
+      int cyclesRemaining; 
+      /*
+       * immediately set the number of remaining cycles to the current cycle
+       * Precondtions:
+       *   cycles remaining should be 0
+       */
+      void setCycle(int cycle);
+      /*
+       * process an incoming instruction by modifying current state, so now
+       * you are working on the new instruction
+       * params:
+       *   instr: the instruction to be processed
+       * Precondtions:
+       *   isBusy should be false
+       */
+      virtual void updateInstr(std::string instr) = 0;
 
     public:
+
       /*
        * return string: the name of this PipelinePhase
        */
       std::string getName() const;
 
       /*
-       * Constructor for initializing name
+       * Initializes name to name. Current instruction is set to Bubble with
+       * one clock cycle
        */
       PipelinePhase(std::string name);
 
@@ -62,20 +83,21 @@ namespace pipeline{
       void updateCycle(int cycleChange);
 
       /*
-       * immediately set the number of remaining cycles to the current cycle
-       * Precondtions:
-       *   cycles remaining should be 0
-       */
-      void setCycle(int cycle);
-
-      /*
-       * process an incoming instruction.
-       * params:
+       * This function does two things.
+       * 1. It returns the instruction that was being worked on (and should be
+       *   finished. If that instruction is not finished, a call to this method
+       *   will raise an Exception
+       * 2. It updates it's current instruction to be the instruction that you
+       *   are passing
+       * params: 
        *   instr: the instruction to be processed
-       * Precondtions:
-       *   isBusy should be false
+       * returns:
+       *   the instruction that was being worked on
        */
-      virtual void processInstr(std::string instr) = 0;
+      std::string processInstr(std::string instr);
+
+      //TODO This line of code breaks it all why?
+      //virtual ~PipelinePhase() = 0;
   };
 
 
@@ -85,9 +107,6 @@ namespace pipeline{
    * TODO add destructor
    */
   class InstructionFetch: public PipelinePhase{
-
-    private:
-      std::string instr;
 
     public:
 
@@ -100,12 +119,12 @@ namespace pipeline{
 
 
       /*
-       * processes an incoming instruction.
+       * updates the current instruction and sets time
        * throws:
        *   TODO do I lie here?
        *   AssertionException if processor is busy.
        */
-      void processInstr(std::string instr);
+      void updateInstr(std::string instr);
 
   };
 

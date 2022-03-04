@@ -1,6 +1,7 @@
 CC = g++
 CFLAGS = -ggdb
 LOG_LIBS = -lboost_log -lpthread
+#How do I find these -l<names> ? 
 UNIT_TEST_LIB = -lboost_unit_test_framework
 
 test: Pipeline.cpp test.cpp
@@ -10,4 +11,4 @@ main: Pipeline.cpp main.cpp
 	$(CC) $^ -o $@  $(LOG_LIBS) $(CFLAGS)
 
 clean:
-	rm test && rm main
+	rm -f test && rm -f main
