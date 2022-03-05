@@ -1,43 +1,54 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <diagram program="umlet" version="13.3">
-  <zoom_level>7</zoom_level>
+  <zoom_level>8</zoom_level>
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>336</x>
-      <y>322</y>
-      <w>245</w>
-      <h>126</h>
+      <x>616</x>
+      <y>224</y>
+      <w>280</w>
+      <h>168</h>
     </coordinates>
-    <panel_attributes>PipelinePhase
+    <panel_attributes>/PipelinePhase/
 --
--name: String
--currInstr: String
+#name: String
+#instr: String
+#args: void* //struct of output prev stage
 --
-+getName(): String
+#PipelinePhase(name: string): void
+#setCycle(cycle: int): void
 +isBusy(): bool
-+getAllHazards(): vector&lt;Hazard&gt;
-+</panel_attributes>
+/+getAllHazards(): vector&lt;Hazard&gt;/
++updateCycle(cycleChange: int): void
++execute(args: void*): void
+/+getOut(): void*/</panel_attributes>
     <additional_attributes/>
   </element>
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>98</x>
-      <y>490</y>
-      <w>70</w>
-      <h>21</h>
+      <x>280</x>
+      <y>448</y>
+      <w>192</w>
+      <h>112</h>
     </coordinates>
-    <panel_attributes>IF</panel_attributes>
+    <panel_attributes>IF
+--
+-mem: MemoryUnit
+--
++InstructionFetch(name: string,
+  mem:MemoryUnit)
++updateInstr(args: void*): void
++getOut(): void*</panel_attributes>
     <additional_attributes/>
   </element>
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>259</x>
-      <y>490</y>
-      <w>119</w>
-      <h>63</h>
+      <x>528</x>
+      <y>448</y>
+      <w>136</w>
+      <h>72</h>
     </coordinates>
     <panel_attributes>ID
 --
@@ -49,10 +60,10 @@
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>413</x>
-      <y>490</y>
-      <w>70</w>
-      <h>21</h>
+      <x>704</x>
+      <y>448</y>
+      <w>80</w>
+      <h>24</h>
     </coordinates>
     <panel_attributes>EX</panel_attributes>
     <additional_attributes/>
@@ -60,23 +71,23 @@
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>504</x>
-      <y>490</y>
-      <w>105</w>
-      <h>70</h>
+      <x>808</x>
+      <y>448</y>
+      <w>120</w>
+      <h>80</h>
     </coordinates>
     <panel_attributes>MA
 --
-mem: MemoryUnit</panel_attributes>
+-mem: MemoryUnit</panel_attributes>
     <additional_attributes/>
   </element>
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>665</x>
-      <y>490</y>
-      <w>105</w>
-      <h>70</h>
+      <x>992</x>
+      <y>448</y>
+      <w>120</w>
+      <h>80</h>
     </coordinates>
     <panel_attributes>WB
 --
@@ -86,84 +97,65 @@ mem: MemoryUnit</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>126</x>
-      <y>441</y>
-      <w>329</w>
-      <h>63</h>
+      <x>312</x>
+      <y>384</y>
+      <w>440</w>
+      <h>80</h>
     </coordinates>
     <panel_attributes>lt=&lt;&lt;-</panel_attributes>
-    <additional_attributes>450.0;10.0;10.0;70.0</additional_attributes>
+    <additional_attributes>530.0;10.0;10.0;80.0</additional_attributes>
   </element>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>280</x>
-      <y>441</y>
-      <w>182</w>
-      <h>63</h>
+      <x>552</x>
+      <y>384</y>
+      <w>208</w>
+      <h>80</h>
     </coordinates>
     <panel_attributes>lt=&lt;&lt;-</panel_attributes>
-    <additional_attributes>240.0;10.0;10.0;70.0</additional_attributes>
+    <additional_attributes>240.0;10.0;10.0;80.0</additional_attributes>
   </element>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>441</x>
-      <y>441</y>
-      <w>21</w>
-      <h>63</h>
+      <x>736</x>
+      <y>376</y>
+      <w>24</w>
+      <h>88</h>
     </coordinates>
     <panel_attributes>lt=&lt;&lt;-</panel_attributes>
-    <additional_attributes>10.0;10.0;10.0;70.0</additional_attributes>
+    <additional_attributes>10.0;10.0;10.0;90.0</additional_attributes>
   </element>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>441</x>
-      <y>441</y>
-      <w>112</w>
-      <h>63</h>
+      <x>736</x>
+      <y>384</y>
+      <w>128</w>
+      <h>80</h>
     </coordinates>
     <panel_attributes>lt=&lt;&lt;-</panel_attributes>
-    <additional_attributes>10.0;10.0;140.0;70.0</additional_attributes>
+    <additional_attributes>10.0;10.0;140.0;80.0</additional_attributes>
   </element>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>448</x>
-      <y>441</y>
-      <w>252</w>
-      <h>63</h>
+      <x>744</x>
+      <y>384</y>
+      <w>288</w>
+      <h>80</h>
     </coordinates>
     <panel_attributes>lt=&lt;&lt;-</panel_attributes>
-    <additional_attributes>10.0;10.0;340.0;70.0</additional_attributes>
+    <additional_attributes>10.0;10.0;340.0;80.0</additional_attributes>
   </element>
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>14</x>
-      <y>147</y>
-      <w>203</w>
-      <h>133</h>
-    </coordinates>
-    <panel_attributes>Pipeline
---
--pipe: PipelinePhase[] //FDEMW
---
-
---
-Responsibilities
--- Resp1
-*-- Resp2*</panel_attributes>
-    <additional_attributes/>
-  </element>
-  <element>
-    <id>UMLClass</id>
-    <coordinates>
-      <x>735</x>
-      <y>140</y>
-      <w>70</w>
-      <h>21</h>
+      <x>1200</x>
+      <y>256</y>
+      <w>80</w>
+      <h>24</h>
     </coordinates>
     <panel_attributes>Hazard</panel_attributes>
     <additional_attributes/>
@@ -171,10 +163,10 @@ Responsibilities
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>700</x>
-      <y>182</y>
-      <w>70</w>
-      <h>21</h>
+      <x>1160</x>
+      <y>304</y>
+      <w>80</w>
+      <h>24</h>
     </coordinates>
     <panel_attributes>DataHazard</panel_attributes>
     <additional_attributes/>
@@ -182,10 +174,10 @@ Responsibilities
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>777</x>
-      <y>182</y>
-      <w>77</w>
-      <h>21</h>
+      <x>1248</x>
+      <y>304</y>
+      <w>88</w>
+      <h>24</h>
     </coordinates>
     <panel_attributes>ControlHazard</panel_attributes>
     <additional_attributes/>
@@ -193,10 +185,10 @@ Responsibilities
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>728</x>
-      <y>154</y>
-      <w>56</w>
-      <h>42</h>
+      <x>1192</x>
+      <y>272</y>
+      <w>64</w>
+      <h>48</h>
     </coordinates>
     <panel_attributes>lt=&lt;&lt;-</panel_attributes>
     <additional_attributes>60.0;10.0;10.0;40.0</additional_attributes>
@@ -204,10 +196,10 @@ Responsibilities
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>763</x>
-      <y>154</y>
-      <w>63</w>
-      <h>42</h>
+      <x>1232</x>
+      <y>272</y>
+      <w>72</w>
+      <h>48</h>
     </coordinates>
     <panel_attributes>lt=&lt;&lt;-</panel_attributes>
     <additional_attributes>10.0;10.0;70.0;40.0</additional_attributes>
@@ -215,10 +207,10 @@ Responsibilities
   <element>
     <id>UMLNote</id>
     <coordinates>
-      <x>609</x>
-      <y>126</y>
-      <w>98</w>
-      <h>49</h>
+      <x>1056</x>
+      <y>240</y>
+      <w>112</w>
+      <h>56</h>
     </coordinates>
     <panel_attributes>No Structural cause not Superscaler
 bg=blue</panel_attributes>
@@ -227,21 +219,223 @@ bg=blue</panel_attributes>
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>357</x>
-      <y>126</y>
-      <w>147</w>
-      <h>133</h>
+      <x>232</x>
+      <y>840</y>
+      <w>192</w>
+      <h>160</h>
     </coordinates>
-    <panel_attributes>Simulation
+    <panel_attributes>DRAM
 --
--Pipeline
+-mem: int //32bit
+-size: size_t
 --
-#Operation(i: int): int
-/+AbstractOperation()/
++MemoryUnit(size: size_t)
++MemoryUnit(size: size_t,
+  mem: int*)
++ld(addr: unsigned int): int
++sw(addr: unsigned int, word: int): void
++shallowCopy(): MemoryUnit</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLNote</id>
+    <coordinates>
+      <x>152</x>
+      <y>448</y>
+      <w>112</w>
+      <h>56</h>
+    </coordinates>
+    <panel_attributes>Mem of IF must
+be same as mem
+of MA
+bg=blue</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>480</x>
+      <y>840</y>
+      <w>232</w>
+      <h>168</h>
+    </coordinates>
+    <panel_attributes>Cache
 --
-Responsibilities
--- Resp1
-*-- Resp2*</panel_attributes>
+-mem: MemoryUnit //32bit
+-associativity: size_t
+-size: size_t
+-blockSize: size_t
+-nSets
+--
++Cache(size: size_t, associtivity: size_t,
+  blockSize: size_t, nSets: size_t,
+  mem: MemoryUnit)
++ld(addr: int): int
++sw(addr: int, word: int): void
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLNote</id>
+    <coordinates>
+      <x>0</x>
+      <y>840</y>
+      <w>216</w>
+      <h>104</h>
+    </coordinates>
+    <panel_attributes>An OS is beyond the scope of this
+project. There will be no OSing.
+Therefore, it is up to the user to load the appropriate instructions into the program counter and make sure they don't do anything stupid like overwrite data with instructions.
+bg=blue</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>368</x>
+      <y>720</y>
+      <w>200</w>
+      <h>72</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;Interface&gt;&gt;
+MemoryUnit
+--
++ld(addr: unisgned int): int
++sw(addr: unsigned int, word: int): void</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>312</x>
+      <y>784</y>
+      <w>160</w>
+      <h>72</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;.
+</panel_attributes>
+    <additional_attributes>180.0;10.0;10.0;70.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>472</x>
+      <y>784</y>
+      <w>144</w>
+      <h>72</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;.
+</panel_attributes>
+    <additional_attributes>10.0;10.0;160.0;70.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>416</x>
+      <y>912</y>
+      <w>80</w>
+      <h>24</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>80.0;10.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>360</x>
+      <y>552</y>
+      <w>24</w>
+      <h>232</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;90.0;10.0;270.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLNote</id>
+    <coordinates>
+      <x>472</x>
+      <y>224</y>
+      <w>112</w>
+      <h>136</h>
+    </coordinates>
+    <panel_attributes>Each pipeline stage operates on a PipelineArgs object, which is slowly added to as it flows through the pipe
+bg=blue</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>200</x>
+      <y>568</y>
+      <w>80</w>
+      <h>56</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;struct&gt;&gt;
+PCOut
+--
++addr: int</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>456</x>
+      <y>568</y>
+      <w>96</w>
+      <h>72</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;struct&gt;&gt;
+IFOut
+--
++instr: string</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>768</x>
+      <y>568</y>
+      <w>128</w>
+      <h>88</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;struct&gt;&gt;
+EXOut
+--
++instr: string
++regVals: vector&lt;int&gt;
++comp: int</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>616</x>
+      <y>568</y>
+      <w>136</w>
+      <h>72</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;struct&gt;&gt;
+IDOut
+--
++instr: string
++regVals: vector&lt;int&gt;</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>928</x>
+      <y>568</y>
+      <w>136</w>
+      <h>96</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;struct&gt;&gt;
+MAOut
+--
++instr: instr
++regVals: vector&lt;int&gt; 
++comp: int
++ldResult: int</panel_attributes>
     <additional_attributes/>
   </element>
 </diagram>

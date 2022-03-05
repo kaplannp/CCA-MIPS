@@ -1,8 +1,9 @@
-#ifndef PIPELINE_H
-#define PIPELINE_H
+#ifndef PIPELINE_H_INCLUDED
+#define PIPELINE_H_INCLUDED
 #include <string>
 #include <assert.h>
 #include <boost/log/trivial.hpp>
+#include "Mem.h"
 
 #define BOOST_LOG_DYN_LINK
 
@@ -31,8 +32,6 @@ namespace pipeline{
       bool checkCyclesRemaining() const;
 
     protected:
-      /* current instruction being executed (Bubble indicates a bubble */
-      std::string instr; 
       /* name of this PipelinePhase */
       const std::string name;
       /* The number of cycles left before freed */
@@ -43,15 +42,12 @@ namespace pipeline{
        *   cycles remaining should be 0
        */
       void setCycle(int cycle);
+
       /*
-       * process an incoming instruction by modifying current state, so now
-       * you are working on the new instruction
-       * params:
-       *   instr: the instruction to be processed
-       * Precondtions:
-       *   isBusy should be false
+       * Initializes name to name. 
+       * one clock cycle
        */
-      virtual void updateInstr(std::string instr) = 0;
+      PipelinePhase(std::string name);
 
     public:
 
@@ -59,12 +55,6 @@ namespace pipeline{
        * return string: the name of this PipelinePhase
        */
       std::string getName() const;
-
-      /*
-       * Initializes name to name. Current instruction is set to Bubble with
-       * one clock cycle
-       */
-      PipelinePhase(std::string name);
 
       /*
        * return bool: True if this pipeline is processing it's current
@@ -84,29 +74,40 @@ namespace pipeline{
 
       /*
        * This function does two things.
-       * 1. It returns the instruction that was being worked on (and should be
-       *   finished. If that instruction is not finished, a call to this method
-       *   will raise an Exception
-       * 2. It updates it's current instruction to be the instruction that you
-       *   are passing
+       * 1. It stores the arguments needed for this instruction
+       * 3. It updates the cyclesRemaining
        * params: 
-       *   instr: the instruction to be processed
+       *   args: the arguments from last stage
        * returns:
        *   the instruction that was being worked on
        */
-      std::string processInstr(std::string instr);
+      virtual void execute(void* args) = 0;
 
+      virtual void* getOut() = 0;
       //TODO This line of code breaks it all why?
       //virtual ~PipelinePhase() = 0;
   };
 
 
 
+  typedef struct PCOut{
+    unsigned int addr;
+  } PCOut;
+
+  typedef struct IFOut{
+    int instr;
+  } IFOut;
   /*
    * Child of Pipeline, InstructionFetch
    * TODO add destructor
    */
   class InstructionFetch: public PipelinePhase{
+
+    private:
+      /* Note that this object does not have responisbility to clean mem*/
+      mem::MemoryUnit* mem;
+      /* arguments for the current instruction (output from previous stage) */
+      PCOut args;
 
     public:
 
@@ -114,17 +115,35 @@ namespace pipeline{
        * name is initialized as specified,
        * instruction will be a bubble,
        * cyclesRemaining will be 0
+       * params:
+       *   name: the name of this InstructionFetch
+       *   mem: the memory unit that this instruction fetch has access to
        */
-      InstructionFetch(std::string name);
+      InstructionFetch(std::string name, mem::MemoryUnit& mem);
 
 
       /*
-       * updates the current instruction and sets time
+       * updates the args and sets time
+       * params:
+       *   args: should be of type PCOut containing the address to be looked up
        * throws:
        *   TODO do I lie here?
        *   AssertionException if processor is busy.
        */
-      void updateInstr(std::string instr);
+      void updateArgs(void* args);
+
+      /*
+       * This function does two things.
+       * 1. It stores the arguments needed for this instruction
+       * 3. It updates the cyclesRemaining
+       * params: 
+       *   args: of type PCOut containing the address to be looked up
+       * returns:
+       *   the instruction that was being worked on
+       */
+      void execute(void* args);
+
+      void* getOut();
 
   };
 
