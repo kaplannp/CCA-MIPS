@@ -1,5 +1,6 @@
 #include "Pipeline.h"
 #include "Mem.h"
+#include "Instruction.h"
 
 #define BOOST_TEST_MODULE Pipeline Tests
 #define BOOST_TEST_DYN_LINK
@@ -10,9 +11,14 @@
 
 // this runs it 'g++ test.cpp  -lboost_unit_test_framework'
 
-/*
- * Just tests to make sure boose and header imports work as I expect
- */
+BOOST_AUTO_TEST_SUITE( TestInstruction )
+
+  BOOST_AUTO_TEST_CASE( TestRInstruction ){
+    instr::Instruction instr = instr::Instruction(0);
+  }
+
+BOOST_AUTO_TEST_SUITE_END()
+
 BOOST_AUTO_TEST_SUITE( TestMemory )
 
   BOOST_AUTO_TEST_CASE( TestDRAM ){
