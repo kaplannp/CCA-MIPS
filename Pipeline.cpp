@@ -12,6 +12,14 @@ namespace pipeline{
     return checkCyclesRemaining();
   }
 
+  void PipelinePhase::setCyclesRemaining(int cycles){
+   cyclesRemaining = cycles;
+    BOOST_LOG_TRIVIAL(debug) << "<<" + getName() + ">> " << "setting cycle to "
+      << cyclesRemaining << "." << std::endl;
+    //It is required that cycles Remaining should never fall below 0
+    assert(checkInvariants());
+  }
+
   bool PipelinePhase::checkCyclesRemaining() const{
     bool invalidCycles = cyclesRemaining < 0;
     if(invalidCycles){
@@ -35,19 +43,15 @@ namespace pipeline{
   }
 
   void PipelinePhase::updateCycle(int cycleChange){
-    //only update cycles if you actually are executing an instruction
-    cyclesRemaining -= cycleChange;
-    //Log event
-    BOOST_LOG_TRIVIAL(debug) << "<<" << getName() << ">>" << 
-      "cycle updated. " << cyclesRemaining << " cycles remaining";
-    //It is required that cycles Remaining should never fall below 0
-    assert(checkInvariants());
+    // this function includes nice logging and error checking
+    setCyclesRemaining(cyclesRemaining - cycleChange);
   }
 
   //TODO If I change the brackets to () I don't get compiler error, I get
   //linker obscure error?
   InstructionFetch::InstructionFetch(std::string name, mem::MemoryUnit& mem):
-    PipelinePhase{ name } {
+    PipelinePhase{ name },
+    mem{ mem }{
     cyclesRemaining = 0;
   }
 
@@ -56,12 +60,13 @@ namespace pipeline{
       assert(!isBusy());
     } catch (std::exception& e){
       BOOST_LOG_TRIVIAL(fatal) << "<<" + getName() + ">> " <<
-        "tried to processInstr, but Pipeline stage was busy" << e.what();
+        "tried to execute, but Pipeline stage was busy. " << e.what();
       throw e;
     }
     this->args = *( (PCOut*) args );
-    this->cyclesRemaining = 1;
+    setCyclesRemaining(1);
   }
+
 
   /* internally this method is very simple. It saves the current instruction,
    * and then calls updateInstr to update the instruction to passed. */
@@ -71,7 +76,7 @@ namespace pipeline{
 
   void* InstructionFetch::getOut(){
     unsigned int addr = args.addr;
-    int instr = mem->ld(addr);
+    int instr = mem.ld(addr);
     IFOut* out = new IFOut();
     out->instr = instr;
     return out;

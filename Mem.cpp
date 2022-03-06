@@ -8,6 +8,12 @@ namespace mem{
 
   /*BEGIN DRAM IMPLEMENTATION*/
 
+  std::string MemoryUnit::getName(){
+    return name;
+  }
+
+  MemoryUnit::MemoryUnit(std::string name): name(name){}
+
   /*
    * throws: exception if address is invalid
    */
@@ -25,7 +31,7 @@ namespace mem{
    * params:
    *   size: the size of the memory in words
    */
-  DRAM::DRAM(size_t size){
+  DRAM::DRAM(size_t size, std::string name): MemoryUnit(name){
     this->size = size;
     mem = new int[size];
   }
@@ -38,7 +44,7 @@ namespace mem{
    *   mem: a pointer to an array of size, size 
    *
    */
-  DRAM::DRAM(size_t size, int* mem){
+  DRAM::DRAM(size_t size, int* mem, std::string name): MemoryUnit(name){
     this->size = size;
     this->mem = new int[size];
     //TODO this is not legal? DRAM(size); overshaddows parameter?
@@ -54,6 +60,7 @@ namespace mem{
    */
   int DRAM::ld(unsigned int addr){
     isValidAddr(addr);
+    BOOST_LOG_TRIVIAL(debug) << "loading " << addr << "." << std::endl;
     return mem[addr];
   }
 
@@ -66,7 +73,13 @@ namespace mem{
    */
   void DRAM::sw(unsigned int addr, int word){
     isValidAddr(addr);
+    BOOST_LOG_TRIVIAL(debug) << "<<DRAM>>" << "storing " << word << " @" 
+      << addr << "." << std::endl;
     mem[addr] = word;
+  }
+
+  size_t DRAM::getSize(){
+    return size;
   }
 
   /*

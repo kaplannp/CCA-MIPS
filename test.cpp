@@ -17,7 +17,7 @@ BOOST_AUTO_TEST_SUITE( TestMemory )
 
   BOOST_AUTO_TEST_CASE( TestDRAM ){
     size_t s1 = 1000;
-    mem::MemoryUnit* m1 = new mem::DRAM(s1);
+    mem::MemoryUnit* m1 = new mem::DRAM(s1, "m1");
 
     //test some simple store
     for(int i = 0; i < 10; i++)
@@ -33,7 +33,7 @@ BOOST_AUTO_TEST_SUITE( TestMemory )
 
     int mo2[] = {4,5,2,4,50,29};
     size_t s2 = 6;
-    mem::MemoryUnit* m2 = new mem::DRAM(s2, mo2);
+    mem::MemoryUnit* m2 = new mem::DRAM(s2, mo2, "m2");
     for(int i = 0; i < s2; i++)
       BOOST_CHECK_EQUAL(m2->ld(i), mo2[i]);
   }
@@ -43,10 +43,10 @@ BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE( TestPipelinePhases )
 
-  BOOST_AUTO_TEST_CASE( TestSimplePhase )
+  BOOST_AUTO_TEST_CASE( TestIF )
   {
     //TODO would love to have m1 be a reference instead of a pointer
-    mem::MemoryUnit* m1 = new mem::DRAM(100);
+    mem::MemoryUnit* m1 = new mem::DRAM(100, "m1");
     //store a couple words in the DRAM
     m1->sw(0,5);
     m1->sw(5,10);

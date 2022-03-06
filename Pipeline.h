@@ -36,12 +36,15 @@ namespace pipeline{
       const std::string name;
       /* The number of cycles left before freed */
       int cyclesRemaining; 
+
       /*
        * immediately set the number of remaining cycles to the current cycle
-       * Precondtions:
-       *   cycles remaining should be 0
+       * has some nice error checking and logging that makes this method
+       * preferable to manual assignment in most circumstances
+       * params:
+       *   cycles: the number to set cyclesRemaining to.
        */
-      void setCycle(int cycle);
+      void setCyclesRemaining(int cycles);
 
       /*
        * Initializes name to name. 
@@ -105,9 +108,11 @@ namespace pipeline{
 
     private:
       /* Note that this object does not have responisbility to clean mem*/
-      mem::MemoryUnit* mem;
+      mem::MemoryUnit& mem;
       /* arguments for the current instruction (output from previous stage) */
       PCOut args;
+
+    protected:
 
     public:
 

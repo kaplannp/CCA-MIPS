@@ -14,6 +14,11 @@ namespace mem{
    * For simplicity, memory units will operate in terms of words of 4 byte
    */
   class MemoryUnit{
+    private:
+      std::string name;
+
+    protected:
+      MemoryUnit(std::string name);
 
     public:
       /*
@@ -32,6 +37,8 @@ namespace mem{
        */
       virtual void sw(unsigned int addr, int word) = 0;
 
+      std::string getName();
+
   };
 
   class DRAM: public MemoryUnit{
@@ -49,8 +56,9 @@ namespace mem{
        * Initialize a memory unit with a dynamically allocated memory array
        * params:
        *   size: the size of the memory in words
+       *   name: a name to keep track of this object
        */
-      DRAM(size_t size);
+      DRAM(size_t size, std::string name);
 
       /*
        * Initizlize memory unit with a given array. Will copy array into
@@ -58,9 +66,9 @@ namespace mem{
        * params:
        *   size: the size of the memory in words
        *   mem: a pointer to an array of size, size 
-       *
+       *   name: a name to keep track of this object
        */
-      DRAM(size_t size, int* mem);
+      DRAM(size_t size, int* mem, std::string name);
     
       /*
        * loads the requested word
@@ -79,6 +87,8 @@ namespace mem{
      * throws: exception if address is invalid
      */
     void sw(unsigned int addr, int word);
+
+    size_t getSize();
 
     /*
      * destructor will deallocate mem array
