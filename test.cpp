@@ -15,6 +15,7 @@ BOOST_AUTO_TEST_SUITE( TestInstruction )
 
   BOOST_AUTO_TEST_CASE( TestRInstruction ){
     instr::Instruction instr = instr::Instruction(0);
+    //BOOST_CHECK_EQUAL(instr.toString(), "R-instruction");
   }
 
 BOOST_AUTO_TEST_SUITE_END()
@@ -77,6 +78,10 @@ BOOST_AUTO_TEST_SUITE( TestPipelinePhases )
     p->updateCycle(1);
     trueOut = *( (pipeline::IFOut*) (p->getOut()));
     BOOST_CHECK_EQUAL(trueOut.instr, o2.instr);
+  }
+
+  BOOST_AUTO_TEST_CASE( TestID ){
+   
   }
 
 BOOST_AUTO_TEST_SUITE_END()
