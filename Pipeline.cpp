@@ -68,18 +68,37 @@ namespace pipeline{
   }
 
 
-  /* internally this method is very simple. It saves the current instruction,
-   * and then calls updateInstr to update the instruction to passed. */
   void InstructionFetch::execute(void* args){
     updateArgs(args);
   }
 
   void* InstructionFetch::getOut(){
     unsigned int addr = args.addr;
-    int instr = mem.ld(addr);
-    IFOut* out = new IFOut();
-    out->instr = instr;
+    mem::data32 instrInt = mem.ld(addr);
+    instruction::Instruction instr = instruction::Instruction(instrInt);
+    IFOut* out = new IFOut(instr);
+    out->instr = instr; //TODO gotta copy here
     return out;
+  }
+
+  InstructionDecode::InstructionDecode(std::string name, mem::MemoryUnit& rf) :
+    PipelinePhase(name),
+    rf{rf}
+  {
+    cyclesRemaining = 1;
+  }
+
+  mem::data32 InstructionDecode::loadReg(const std::bitset<6>& addr) const{
+    unsigned long addr_int = addr.to_ulong();
+    return rf.ld(addr_int);
+  }
+
+  void InstructionDecode::execute(void* args){
+    //TODO implement
+  }
+
+  void* InstructionDecode::getOut(){
+    return NULL;
   }
 
 }

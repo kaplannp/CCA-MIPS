@@ -8,7 +8,7 @@ namespace mem{
 
   /*BEGIN DRAM IMPLEMENTATION*/
 
-  std::string MemoryUnit::getName(){
+  const std::string& MemoryUnit::getName(){
     return name;
   }
 
@@ -19,9 +19,10 @@ namespace mem{
    */
   void DRAM::isValidAddr(int addr){
     if(addr > size){
-      BOOST_LOG_TRIVIAL(fatal) << "<<DRAM>> tried to access invalid memory"
-        "address was " << addr << " but size of DRAM is " << size << 
-        std::endl;
+      BOOST_LOG_TRIVIAL(fatal) << "<<" << getName() << 
+        ">> tried to access invalid memory "
+        "address was " << addr << " but size of " << getName() << " is " <<
+        size << std::endl;
       throw std::exception();
     }
   }
@@ -33,7 +34,7 @@ namespace mem{
    */
   DRAM::DRAM(size_t size, std::string name): MemoryUnit(name){
     this->size = size;
-    mem = new int[size];
+    mem = new data32[size];
   }
 
   /*
@@ -44,9 +45,9 @@ namespace mem{
    *   mem: a pointer to an array of size, size 
    *
    */
-  DRAM::DRAM(size_t size, int* mem, std::string name): MemoryUnit(name){
+  DRAM::DRAM(size_t size, data32* mem, std::string name): MemoryUnit(name){
     this->size = size;
-    this->mem = new int[size];
+    this->mem = new data32[size];
     //TODO this is not legal? DRAM(size); overshaddows parameter?
     std::copy(mem, mem + size, this->mem); //copy
   }
@@ -58,9 +59,10 @@ namespace mem{
    * returns: the word at that address
    * throws: exception if address is invalid
    */
-  int DRAM::ld(unsigned int addr){
+  data32 DRAM::ld(unsigned int addr){
     isValidAddr(addr);
-    BOOST_LOG_TRIVIAL(debug) << "loading " << addr << "." << std::endl;
+    BOOST_LOG_TRIVIAL(debug) << "<<" << getName() << ">>" << " loading " << 
+      addr << "." << std::endl;
     return mem[addr];
   }
 
@@ -71,10 +73,10 @@ namespace mem{
    *   word: the word to store
    * throws: exception if address is invalid
    */
-  void DRAM::sw(unsigned int addr, int word){
+  void DRAM::sw(unsigned int addr, data32 word){
     isValidAddr(addr);
-    BOOST_LOG_TRIVIAL(debug) << "<<DRAM>>" << "storing " << word << " @" 
-      << addr << "." << std::endl;
+    BOOST_LOG_TRIVIAL(debug) << "<<" << getName() << ">>" << "storing " << 
+      word << " @" << addr << "." << std::endl;
     mem[addr] = word;
   }
 

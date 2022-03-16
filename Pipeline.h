@@ -3,7 +3,10 @@
 #include <string>
 #include <assert.h>
 #include <boost/log/trivial.hpp>
+#include <vector>
+
 #include "Mem.h"
+#include "Instruction.h"
 
 #define BOOST_LOG_DYN_LINK
 
@@ -12,6 +15,7 @@
  * in a pipeline. It must implement the included methods.
  */
 namespace pipeline{
+
 
   /*
    * This is the core abstract class for a pipeline phase
@@ -97,8 +101,13 @@ namespace pipeline{
     unsigned int addr;
   } PCOut;
 
+  //TODO gotta figure out how to destroy this now
   typedef struct IFOut{
-    int instr;
+    instruction::Instruction instr;
+    IFOut(const instruction::Instruction& instr): instr{
+      instruction::Instruction(instr)}{};
+    //This is necessary for initialization of Decode
+    IFOut(): instr{instruction::Instruction(0)}{};
   } IFOut;
   /*
    * Child of Pipeline, InstructionFetch
@@ -111,8 +120,6 @@ namespace pipeline{
       mem::MemoryUnit& mem;
       /* arguments for the current instruction (output from previous stage) */
       PCOut args;
-
-    protected:
 
     public:
 
@@ -140,7 +147,46 @@ namespace pipeline{
       /*
        * This function does two things.
        * 1. It stores the arguments needed for this instruction
-       * 3. It updates the cyclesRemaining
+       * 2. It updates the cyclesRemaining
+       * params: 
+       *   args: of type PCOut containing the address to be looked up
+       * returns:
+       *   the instruction that was being worked on
+       */
+      //TODO why do I even have this? it just calls updateARgs. refactor
+      void execute(void* args);
+
+      void* getOut();
+
+  };
+
+
+  //TODO Not sure who has responsibility of destroying this, but someone better
+  //do it
+  typedef struct IDOut {
+    instruction::Instruction instr;
+    std::vector<mem::data32> regVals;
+  } IDOut;
+
+  /*
+   * Much of the actual decoding of instructions is delegated to the Instruction
+   * class, but this still leaves some things, most importantly register fetch,
+   * which will have some effects on runtime. The primary purpose of this class
+   * is to fetch the values from the register file and return them
+   */
+  class InstructionDecode: public PipelinePhase {
+    private:
+      mem::MemoryUnit& rf;
+      IFOut args;
+    
+    public:
+
+      InstructionDecode(std::string name, mem::MemoryUnit& rf);
+
+      /*
+       * This function does two things.
+       * 1. It stores the arguments needed for this instruction
+       * 2. It updates the cyclesRemaining
        * params: 
        *   args: of type PCOut containing the address to be looked up
        * returns:
@@ -150,7 +196,16 @@ namespace pipeline{
 
       void* getOut();
 
+      /*
+       * loads a register give nthe required address
+       * params:
+       *   addr: the bits corresponding to the requested address
+       * returns: the value in the register file at that address
+       */
+      mem::data32 loadReg(const std::bitset<6>& addr) const;
+
   };
+  
 
 }
 #endif

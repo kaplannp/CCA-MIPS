@@ -1,6 +1,6 @@
 CC = g++
 CFLAGS = -ggdb
-LOG_LIBS = -lboost_log -lpthread
+LOG_LIBS = -lboost_log -lpthread -fmax-errors=4 -Wno-inline
 #How do I find these -l<names> ? 
 UNIT_TEST_LIB = -lboost_unit_test_framework
 

@@ -8,6 +8,7 @@
  */
 namespace mem{
 
+  typedef unsigned int data32;
   /*
    * Base interface for all memory objects
    * Abstract class
@@ -27,7 +28,7 @@ namespace mem{
        *   addr: the address
        * returns: the word
        */
-      virtual int ld(unsigned int addr) = 0;
+      virtual data32 ld(unsigned int addr) = 0;
 
       /*
        * stores word at loaction specified by address
@@ -35,16 +36,16 @@ namespace mem{
        *   addr: the address
        *   word: the word to store
        */
-      virtual void sw(unsigned int addr, int word) = 0;
+      virtual void sw(unsigned int addr, data32 word) = 0;
 
-      std::string getName();
+      const std::string& getName();
 
   };
 
   class DRAM: public MemoryUnit{
 
     private:
-      int* mem;
+      data32* mem;
       size_t size;
       /*
        * throws: exception if address is invalid
@@ -68,7 +69,7 @@ namespace mem{
        *   mem: a pointer to an array of size, size 
        *   name: a name to keep track of this object
        */
-      DRAM(size_t size, int* mem, std::string name);
+      DRAM(size_t size, data32* mem, std::string name);
     
       /*
        * loads the requested word
@@ -77,7 +78,7 @@ namespace mem{
        * returns: the word at that address
        * throws: exception if address is invalid
        */
-      int ld(unsigned int addr);
+      data32 ld(unsigned int addr);
 
     /*
      * stores word at loaction specified by address
@@ -86,7 +87,7 @@ namespace mem{
      *   word: the word to store
      * throws: exception if address is invalid
      */
-    void sw(unsigned int addr, int word);
+    void sw(unsigned int addr, data32 word);
 
     size_t getSize();
 
