@@ -163,9 +163,24 @@ namespace pipeline{
 
   //TODO Not sure who has responsibility of destroying this, but someone better
   //do it
+  /*
+   * This represents the output of an Instruction Decode Phase. The first
+   * element is the instruction that was being processed. The second element is
+   * the register values that were loaded. This second element merits an
+   * explanation.
+   *
+   * std::vector<mem::data32> regVals is a vector of loaded data values. It has
+   * variable length because the number of registers loaded is dependent
+   * upon the instruction. The order of the registers is the same as in the
+   * machine encoding of the instruction. For example, an R-Type instruction
+   * uses three registers, rs, rt, rd, so the vector will be {ld(rs), ld(rt),
+   * ld(rd)}
+   */
   typedef struct IDOut {
     instruction::Instruction instr;
     std::vector<mem::data32> regVals;
+    IDOut(instruction::Instruction instr, std::vector<mem::data32> regVals)
+      : instr{instr}, regVals{regVals}{};
   } IDOut;
 
   /*

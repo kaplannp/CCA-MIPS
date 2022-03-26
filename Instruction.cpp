@@ -32,11 +32,8 @@ namespace instruction{
     OPCODE2STR = initOpcode2Str();
   }
 
+
   //TODO I got nothing dynamic, therefore copying is ok?
-  //Instruction::Instruction(const Instruction& instr){
-  //  this->instr = instr.getInstr(); //TODO pray this is copy assignable
-  //  OPCODE2STR = initOpcode2Str();
-  //}
 
   std::bitset<6>* Instruction::getSlice(int start, int end) const{
     std::bitset<6>* slice = new std::bitset<6>();
@@ -46,13 +43,14 @@ namespace instruction{
     return slice;
   }
 
-  std::string Instruction::getType(const std::bitset<6>& opcode) const{
-    return (*OPCODE2STR)[opcode];
+  std::string Instruction::getType() const{
+    //TODO destroy here?
+    const std::bitset<6>* opcode = getSlice(26,32);
+    return (*OPCODE2STR)[*opcode];
   }
 
   std::string Instruction::toString(){
-    //TODO destroy here?
-    return getType(*getSlice(26,32));
+    return getType() + " " + instr.to_string();
   }
 
 //Operators

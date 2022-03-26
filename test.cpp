@@ -9,6 +9,7 @@
 
 #include <boost/test/unit_test.hpp>
 #include <exception>
+#include <string>
 
 // this runs it 'g++ test.cpp  -lboost_unit_test_framework'
 
@@ -28,7 +29,7 @@ BOOST_AUTO_TEST_SUITE( TestInstruction )
       instruction::Instruction instr = instruction::Instruction(
           codes[i] << 26
           );
-      BOOST_CHECK_EQUAL(instr.toString(), types[i]);
+      BOOST_CHECK(instr.toString().find(types[i]) != std::string::npos);
     }
     #undef SIZE
   }
@@ -101,6 +102,7 @@ BOOST_AUTO_TEST_SUITE( TestPipelinePhases )
   }
 
   BOOST_AUTO_TEST_CASE( TestID ){
+    //Check an R-Type Instruction
     mem::MemoryUnit* rf1 = new mem::DRAM(100, "rf1");
     pipeline::PipelinePhase* id = new pipeline::InstructionDecode("ID",*rf1);
     int opcode = 0;
@@ -117,14 +119,13 @@ BOOST_AUTO_TEST_SUITE( TestPipelinePhases )
     //create instruction and execute it
     unsigned int instructionVal = constructRInstr(rs, rt, rd, shamt, func);
     instruction::Instruction instr = instruction::Instruction(instructionVal);
-    BOOST_CHECK_EQUAL(instr.toString(), "R-Type");
+    BOOST_CHECK(instr.toString().find("R-Type") != std::string::npos);
     pipeline::IFOut ifOut = pipeline::IFOut(instr);
     id->execute((void*)&ifOut);
     id->updateCycle(1); //pass one timestep
     //check for correct output
     pipeline::IDOut* idOut = (pipeline::IDOut*) id->getOut();
     for(int i = 0; i < 3; i++){
-      std::cout << i << std::endl;
       BOOST_CHECK_EQUAL(idOut->regVals[i], regVals[i]);
     }
   }

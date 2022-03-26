@@ -94,11 +94,35 @@ namespace pipeline{
   }
 
   void InstructionDecode::execute(void* args){
-    //TODO implement
+    this->args = *((IFOut*) args);
+    BOOST_LOG_TRIVIAL(debug) << "<<" + getName() + ">> " << "executing args"
+      " with instruction " << this->args.instr.toString() << std::endl;
   }
 
   void* InstructionDecode::getOut(){
-    return NULL;
+    std::vector<mem::data32> regVals;
+    if(args.instr.getType().find("R-Type") != std::string::npos){
+      //Is R-Type
+      regVals = std::vector<mem::data32>(3);
+      std::bitset<6>* rs = args.instr.getSlice(21,26);
+      std::bitset<6>* rt = args.instr.getSlice(16,21);
+      std::bitset<6>* rd = args.instr.getSlice(11,16);
+      regVals[0] = loadReg(*rs);
+      regVals[1] = loadReg(*rt);
+      regVals[2] = loadReg(*rd);
+    } else{
+      //Is I-Type
+      regVals = std::vector<mem::data32>(2);
+      std::bitset<6>* rs = args.instr.getSlice(21,26);
+      //depending on the type, this next register may be rt or Rd. It doesn't
+      //matter at this stage
+
+      std::bitset<6>* rtOrRd = args.instr.getSlice(16,21);
+      regVals[0] = loadReg(*rs);
+      regVals[1] = loadReg(*rtOrRd);
+    }
+    IDOut* out = new IDOut(args.instr, regVals);
+    return out;
   }
 
 }

@@ -16,6 +16,16 @@ namespace instruction{
       //TODO would love to make this const and static
       std::unordered_map<std::bitset<6>, std::string>* OPCODE2STR;
       InstrBits instr;
+      //Initializes the opcode2string map
+      std::unordered_map<std::bitset<6>, std::string>* initOpcode2Str();
+
+    public:
+      Instruction(unsigned int instr);
+      std::string toString();
+      /*
+       * Returns a copy of this instruction
+       */
+      InstrBits getInstr() const;
       /*
        * Used to enable python like slicing of instructions.
        * returns a pointer to dynamically allocated slice.
@@ -31,29 +41,7 @@ namespace instruction{
        *     of the instruction.
        * returns: copy of string, the type of this instruction
        */
-      std::string getType(const std::bitset<6>& opcode) const;
-      /*
-       * returns the value located in the register specified by the slice
-       * params:
-       *   addr: the address of the register
-       * returns: the value in the memory at that location
-       */
-      mem::data32 loadReg(const std::bitset<6>& addr) const;
-
-      //Initializes the opcode2string map
-      std::unordered_map<std::bitset<6>, std::string>* initOpcode2Str();
-
-    public:
-      Instruction(unsigned int instr);
-      /*
-       * copy constructor necessary
-       */
-      //Instruction(const Instruction& instr);
-      std::string toString();
-      /*
-       * Returns a copy of this instruction
-       */
-      InstrBits getInstr() const;
+      std::string getType() const;
   };
 
   bool operator==(const Instruction& left, const Instruction& right);

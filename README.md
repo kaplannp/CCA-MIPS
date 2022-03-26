@@ -1,5 +1,5 @@
 # CCA-MIPS
-
+std::bitset is big endian, so that's what we're doing.  
 #References
 + https://www.dsi.unive.it/~gasparetto/materials/MIPS_Instruction_Set.pdf //nice
   reference for MIPS instructions
