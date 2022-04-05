@@ -1,0 +1,4 @@
+mips-linux-gnu-gcc <file.c> // compiles the thing
+mips-linux-gnu-gcc -S <file.c> // just go down to assembly
+mips-linux-gnu-gcc -S <file.c> // just go down to assembly
+xdd <executable_file> // returns contents of executable file in readable format

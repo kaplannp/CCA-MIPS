@@ -3,40 +3,18 @@
 
 namespace instruction{
  
-  std::unordered_map<std::bitset<6>, std::string>* Instruction::initOpcode2Str()
-  {
-    std::unordered_map<std::bitset<6>, std::string>* map = new 
-      std::unordered_map<std::bitset<6>, std::string>();
-    map->insert({std::bitset<6>(0), "R-Type"});
-    map->insert({std::bitset<6>(0x2), "J-Type:j"});
-    map->insert({std::bitset<6>(0x3), "J-Type:jal"});
-    map->insert({std::bitset<6>(0x4), "I-Type:eq"});
-    map->insert({std::bitset<6>(0x5), "I-Type:ne"});
-    map->insert({std::bitset<6>(0x8), "I-Type:ddi"});
-    map->insert({std::bitset<6>(0x9), "I-Type:ddiu"});
-    map->insert({std::bitset<6>(0xa), "I-Type:lti"});
-    map->insert({std::bitset<6>(0xb), "I-Type:ltiu"});
-    map->insert({std::bitset<6>(0xc), "I-Type:ndi"});
-    map->insert({std::bitset<6>(0xd), "I-Type:ri"});
-    map->insert({std::bitset<6>(0xe), "I-Type:ori"});
-    map->insert({std::bitset<6>(0xf), "I-Type:ui"});
-    return map;
-  }
 
   InstrBits Instruction::getInstr() const{
     return instr;
   }
 
-  Instruction::Instruction(unsigned int instr): instr(instr){
-    //TODO this has really got to go
-    OPCODE2STR = initOpcode2Str();
-  }
+  Instruction::Instruction(unsigned int instr): instr(instr){}
 
 
   //TODO I got nothing dynamic, therefore copying is ok?
-
+  //TODO I don't know the size this needs to return! C++ template magic?
   std::bitset<6>* Instruction::getSlice(int start, int end) const{
-    std::bitset<6>* slice = new std::bitset<6>();
+    std::bitset<6>* slice = new std::bitset<6>(0);
     for(int i = start; i < end; i++){
       slice->set(i-start, instr[i]);
     }
@@ -46,12 +24,58 @@ namespace instruction{
   std::string Instruction::getType() const{
     //TODO destroy here?
     const std::bitset<6>* opcode = getSlice(26,32);
-    return (*OPCODE2STR)[*opcode];
+    return Instruction::OPCODE2STR.at(*opcode);
+  }
+  
+  std::string Instruction::getFuncType() const{
+    std::bitset<6>* funcBits = getSlice(0,6);
+    std::string func = FUNC_2_MNEMONIC.at((unsigned int) funcBits->to_ulong());
+    return func;
   }
 
-  std::string Instruction::toString(){
+  std::string Instruction::toString() const{
     return getType() + " " + instr.to_string();
   }
+
+  //std::unordered_map<std::bitset<6>, std::string>* Instruction::initOpcode2Str()
+  //{
+  //  std::unordered_map<std::bitset<6>, std::string>* map = new 
+  //    std::unordered_map<std::bitset<6>, std::string>();
+  //  map->insert({std::bitset<6>(0), "R-Type"});
+  //  map->insert({std::bitset<6>(0x2), "J-Type:j"});
+  //  map->insert({std::bitset<6>(0x3), "J-Type:jal"});
+  //  map->insert({std::bitset<6>(0x4), "I-Type:eq"});
+  //  map->insert({std::bitset<6>(0x5), "I-Type:ne"});
+  //  map->insert({std::bitset<6>(0x8), "I-Type:ddi"});
+  //  map->insert({std::bitset<6>(0x9), "I-Type:ddiu"});
+  //  map->insert({std::bitset<6>(0xa), "I-Type:lti"});
+  //  map->insert({std::bitset<6>(0xb), "I-Type:ltiu"});
+  //  map->insert({std::bitset<6>(0xc), "I-Type:ndi"});
+  //  map->insert({std::bitset<6>(0xd), "I-Type:ri"});
+  //  map->insert({std::bitset<6>(0xe), "I-Type:ori"});
+  //  map->insert({std::bitset<6>(0xf), "I-Type:ui"});
+  //  return map;
+  //}
+  
+//Initialize OPCODE
+  const std::unordered_map<std::bitset<6>, std::string> Instruction::OPCODE2STR = 
+    std::unordered_map<std::bitset<6>, std::string>(
+        {
+           {std::bitset<6>(0), "R-Type"},
+           {std::bitset<6>(0x2), "J-Type:j"},
+           {std::bitset<6>(0x3), "J-Type:jal"},
+           {std::bitset<6>(0x4), "I-Type:eq"},
+           {std::bitset<6>(0x5), "I-Type:ne"},
+           {std::bitset<6>(0x8), "I-Type:ddi"},
+           {std::bitset<6>(0x9), "I-Type:ddiu"},
+           {std::bitset<6>(0xa), "I-Type:lti"},
+           {std::bitset<6>(0xb), "I-Type:ltiu"},
+           {std::bitset<6>(0xc), "I-Type:ndi"},
+           {std::bitset<6>(0xd), "I-Type:ri"},
+           {std::bitset<6>(0xe), "I-Type:ori"},
+           {std::bitset<6>(0xf), "I-Type:ui"}
+        }
+   );
 
 //Operators
   bool operator==(const Instruction& left, const Instruction& right){

@@ -6,6 +6,15 @@
 #include "Mem.h"
 
 namespace instruction{
+
+  //TODO would love to not have this in header
+  //Also, why does this work with const, but not without?
+  const std::unordered_map<unsigned int, std::string> FUNC_2_MNEMONIC = 
+    std::unordered_map<unsigned int, std::string>({
+        {0x21,"addu"},
+        {0x23,"subu"}
+        });
+
   typedef std::bitset<32> InstrBits;
   /*
    * Instruction class is used to handle the MIPS translation from bits into
@@ -13,15 +22,12 @@ namespace instruction{
    */
   class Instruction{
     private:
-      //TODO would love to make this const and static
-      std::unordered_map<std::bitset<6>, std::string>* OPCODE2STR;
+      static const std::unordered_map<std::bitset<6>, std::string> OPCODE2STR;
       InstrBits instr;
-      //Initializes the opcode2string map
-      std::unordered_map<std::bitset<6>, std::string>* initOpcode2Str();
 
     public:
       Instruction(unsigned int instr);
-      std::string toString();
+      std::string toString() const;
       /*
        * Returns a copy of this instruction
        */
@@ -42,6 +48,12 @@ namespace instruction{
        * returns: copy of string, the type of this instruction
        */
       std::string getType() const;
+
+      /*
+       * returns the type of the function as specified in the hashtable
+       * FUNC_2_MNEMONIC
+       */
+      std::string getFuncType() const;
   };
 
   bool operator==(const Instruction& left, const Instruction& right);

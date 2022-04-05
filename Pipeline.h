@@ -56,6 +56,13 @@ namespace pipeline{
        */
       PipelinePhase(std::string name);
 
+      /*
+       * This is useful for code reuse. Most (all?) children will use this
+       * function before updating arguments in execute
+       * returns: true if safe to change the arguments, false if not
+       */
+      bool canUpdateArgs();
+
     public:
 
       /*
@@ -91,10 +98,7 @@ namespace pipeline{
       virtual void execute(void* args) = 0;
 
       virtual void* getOut() = 0;
-      //TODO This line of code breaks it all why?
-      //virtual ~PipelinePhase() = 0;
   };
-
 
 
   typedef struct PCOut{
@@ -133,17 +137,6 @@ namespace pipeline{
        */
       InstructionFetch(std::string name, mem::MemoryUnit& mem);
 
-
-      /*
-       * updates the args and sets time
-       * params:
-       *   args: should be of type PCOut containing the address to be looked up
-       * throws:
-       *   TODO do I lie here?
-       *   AssertionException if processor is busy.
-       */
-      void updateArgs(void* args);
-
       /*
        * This function does two things.
        * 1. It stores the arguments needed for this instruction
@@ -153,7 +146,6 @@ namespace pipeline{
        * returns:
        *   the instruction that was being worked on
        */
-      //TODO why do I even have this? it just calls updateARgs. refactor
       void execute(void* args);
 
       void* getOut();
@@ -181,6 +173,7 @@ namespace pipeline{
     std::vector<mem::data32> regVals;
     IDOut(instruction::Instruction instr, std::vector<mem::data32> regVals)
       : instr{instr}, regVals{regVals}{};
+    IDOut(): instr{instruction::Instruction(0)}, regVals(0){};
   } IDOut;
 
   /*
@@ -193,6 +186,13 @@ namespace pipeline{
     private:
       mem::MemoryUnit& rf;
       IFOut args;
+      /*
+       * loads a register give nthe required address
+       * params:
+       *   addr: the bits corresponding to the requested address
+       * returns: the value in the register file at that address
+       */
+      mem::data32 loadReg(const std::bitset<6>& addr) const;
     
     public:
 
@@ -209,18 +209,71 @@ namespace pipeline{
        */
       void execute(void* args);
 
-      void* getOut();
-
       /*
-       * loads a register give nthe required address
-       * params:
-       *   addr: the bits corresponding to the requested address
-       * returns: the value in the register file at that address
+       * does necessary computation for whichever arguments are currently
+       * stored.
+       * returns:
+       *   IDOut*, a pointer to struct with instruction and loaded registers.
+       *   contents of regVals varies on instr type:
+       *     R-Type: size 3, {rs, rt, rd}
+       *     I-Type: size 2, {rs, rt/rd}
+       *     J-Type: size 0
        */
-      mem::data32 loadReg(const std::bitset<6>& addr) const;
+      void* getOut();
 
   };
   
+  /*
+   * Ouput of an Execute pipeline phase.
+   * Builds upon the IDOut by adding a comp field for the result of the
+   * computation.
+   */
+  typedef struct EXOut {
+    instruction::Instruction instr;
+    std::vector<mem::data32> regVals;
+    mem::data32 comp;
+    EXOut(instruction::Instruction instr, std::vector<mem::data32> regVals,
+        mem::data32 comp) : instr{instr}, regVals{regVals}, comp{comp}{};
+  } EXOut;
+
+  /*
+   * This is the class responsible for the execution phase of the pipeline
+   * Decides what operation needs to be done and executes it.
+   */
+  class Execute: public PipelinePhase {
+    private:
+      IDOut args;
+      //TODO would be nice to have a hashtable of string mnemonic to function
+      //like this 
+      //typedef int (*IntFunctionWithOneParameter) (int a);
+      //but looks complicated
+
+    public:
+      Execute(std::string name);
+
+      /*
+       * This function does two things.
+       * 1. It stores the arguments needed for this instruction
+       * 2. It updates the cyclesRemaining
+       * params: 
+       *   args: of type PCOut containing the address to be looked up
+       * returns:
+       *   the instruction that was being worked on
+       */
+      void execute(void* args);
+
+      /*
+       * does necessary computation for whichever arguments are currently
+       * stored.
+       * returns:
+       *   IDOut*, a pointer to struct with instruction and loaded registers.
+       *   contents of regVals varies on instr type:
+       *     R-Type: size 3, {rs, rt, rd}
+       *     I-Type: size 2, {rs, rt/rd}
+       *     J-Type: size 0
+       */
+      void* getOut();
+  };
 
 }
 #endif

@@ -45,11 +45,10 @@ namespace mem{
    *   mem: a pointer to an array of size, size 
    *
    */
-  DRAM::DRAM(size_t size, data32* mem, std::string name): MemoryUnit(name){
+  DRAM::DRAM(size_t size, data32* mem, std::string name):
+  MemoryUnit{name}, mem{mem}
+  {
     this->size = size;
-    this->mem = new data32[size];
-    //TODO this is not legal? DRAM(size); overshaddows parameter?
-    std::copy(mem, mem + size, this->mem); //copy
   }
   
   /*

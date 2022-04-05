@@ -102,10 +102,11 @@ BOOST_AUTO_TEST_SUITE( TestPipelinePhases )
   }
 
   BOOST_AUTO_TEST_CASE( TestID ){
-    //Check an R-Type Instruction
     mem::MemoryUnit* rf1 = new mem::DRAM(100, "rf1");
     pipeline::PipelinePhase* id = new pipeline::InstructionDecode("ID",*rf1);
-    int opcode = 0;
+    id->updateCycle(1); //burn the bubble
+
+    //Check an R-Type Instruction
     int rs = 1;
     int rt = 2;
     int rd = 4;
@@ -121,12 +122,86 @@ BOOST_AUTO_TEST_SUITE( TestPipelinePhases )
     instruction::Instruction instr = instruction::Instruction(instructionVal);
     BOOST_CHECK(instr.toString().find("R-Type") != std::string::npos);
     pipeline::IFOut ifOut = pipeline::IFOut(instr);
+    std::cout << "is busy is " << id->isBusy() << std::endl;
     id->execute((void*)&ifOut);
     id->updateCycle(1); //pass one timestep
     //check for correct output
     pipeline::IDOut* idOut = (pipeline::IDOut*) id->getOut();
     for(int i = 0; i < 3; i++){
       BOOST_CHECK_EQUAL(idOut->regVals[i], regVals[i]);
+    }
+    //Check an I-Type Instruction
+    int opcode2 = 4;
+    int rs2 = 15;
+    int rtOrRD = 30;
+    int instrVal = 0;
+    int regVals2[2] = {7,20};
+    //write some registers
+    rf1->sw(rs2, regVals2[0]);
+    rf1->sw(rtOrRD, regVals2[1]);
+    //create instruction and execute it
+    unsigned int instructionVal2 = constructIInstr(opcode2, rs2, rtOrRD, 
+        instrVal);
+    instruction::Instruction instr2 = instruction::Instruction(instructionVal2);
+    BOOST_CHECK(instr2.toString().find("I-Type") != std::string::npos);
+    pipeline::IFOut ifOut2 = pipeline::IFOut(instr2);
+    id->execute((void*)&ifOut2);
+    id->updateCycle(1); //pass one timestep
+    //check for correct output
+    pipeline::IDOut* idOut2 = (pipeline::IDOut*) id->getOut();
+    for(int i = 0; i < idOut2->regVals.size(); i++){
+      BOOST_CHECK_EQUAL(idOut2->regVals[i], regVals2[i]);
+    }
+    //Check a J-Type Instruction
+    int opcode3 = 2;
+    int instrVal3 = 32;
+    unsigned int instructionVal3 = constructJInstr(opcode3, instrVal3);
+    instruction::Instruction instr3 = instruction::Instruction(instructionVal3);
+    BOOST_CHECK(instr3.getType().find("J-Type") != std::string::npos);
+    pipeline::IFOut ifOut3 = pipeline::IFOut(instr3);
+    id->execute((void*)&ifOut3);
+    id->updateCycle(1); //pass one timestep
+    //check for correct output
+    pipeline::IDOut* idOut3 = (pipeline::IDOut*) id->getOut();
+    BOOST_CHECK(idOut3->regVals.empty());
+  }
+
+  BOOST_AUTO_TEST_CASE( TestExecute ){
+    pipeline::PipelinePhase* ex = new pipeline::Execute("EX");
+    ex->updateCycle(1); // Burn the bubble 
+    typedef struct runArgs {
+      mem::data32 rs;
+      mem::data32 rt;
+      mem::data32 rd;
+      unsigned int shamt;
+      unsigned int func;
+      mem::data32 expected;
+      runArgs( mem::data32 rs, mem::data32 rt, mem::data32 rd,
+          unsigned int shamt, unsigned int func, mem::data32 expected) : 
+          rs{rs}, rt{rt}, rd{rd}, shamt{shamt}, func{func}, expected{expected}{}
+    } runArgs;
+    std::vector<runArgs> runs = {
+      runArgs(2,4,0,0,0x21,6), //addu 2+4 = 6
+      runArgs(2,4,0,0,0x23,2), //subu 4-2 = 2
+      runArgs(1,0,0,0,0x23,-1), //subu 0-1 = -1 *note -1 = 4294967295
+      runArgs(-1,1,0,0,0x21,0), //addu -1+1 = 0 *note see above
+    };
+    for(runArgs args : runs){
+      //Note that rs, rt, rd addrs don't matter, only their values, so that
+      //is what is stored here
+      mem::data32 rs = args.rs; //val to invert
+      mem::data32 rt = args.rt; //val not inverted
+      mem::data32 rd = args.rd; //destination
+      unsigned int shamt = args.shamt;
+      unsigned int func = args.func;
+      unsigned int instructionVal = constructRInstr(0, 0, 0, shamt, func);
+      instruction::Instruction instr = instruction::Instruction(instructionVal);
+      std::vector<mem::data32> regVals = {rs, rt, rd};
+      pipeline::IDOut idOut = pipeline::IDOut(instr, regVals);
+      ex->execute(&idOut);
+      ex->updateCycle(1);
+      pipeline::EXOut* exOut = (pipeline::EXOut*) ex->getOut();
+      BOOST_CHECK_EQUAL(exOut->comp, args.expected);
     }
   }
 

@@ -3,12 +3,10 @@
 
 using namespace std;
 
-void set3(int& x){
-  x = 3;
-}
 int main(){
-  bitset<5> x = bitset<5>(1);
-  bitset<5> y = bitset<5>(1 << 4);
-  cout << x << endl;
-  cout << y << endl;
+  unsigned int x1 = 1;
+  unsigned int x2 = 0;
+  unsigned int x3 = -1;
+  cout << std::bitset<32>(x2-x1) << endl;
+  cout << x3 << endl;
 }
