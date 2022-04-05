@@ -10,6 +10,7 @@
 #include <boost/test/unit_test.hpp>
 #include <exception>
 #include <string>
+#include <math.h>
 
 // this runs it 'g++ test.cpp  -lboost_unit_test_framework'
 
@@ -181,10 +182,34 @@ BOOST_AUTO_TEST_SUITE( TestPipelinePhases )
           rs{rs}, rt{rt}, rd{rd}, shamt{shamt}, func{func}, expected{expected}{}
     } runArgs;
     std::vector<runArgs> runs = {
+      //addu
       runArgs(2,4,0,0,0x21,6), //addu 2+4 = 6
+      runArgs(-1,1,0,0,0x21,0), //addu -1+1 = 0 *note -1 = 4294967295
+      //subu
       runArgs(2,4,0,0,0x23,2), //subu 4-2 = 2
       runArgs(1,0,0,0,0x23,-1), //subu 0-1 = -1 *note -1 = 4294967295
-      runArgs(-1,1,0,0,0x21,0), //addu -1+1 = 0 *note see above
+      //sll
+      runArgs(1,0,0,31,0x0,std::pow(2,31)), //sll 1 << 31 = 2**31
+      runArgs(2,0,0,31,0x0,0), //sll 2 << 31 = 0 *overflow
+      runArgs(5,0,0,4,0x0,5<<4), //sll 5 << 4 = 5 << 4 
+      runArgs(5,0,0,0,0x0,5), //sll 5 << 0 = 5 
+      //sllv
+      runArgs(2,4,0,0,0x4,2<<4), //2<<4 = 2<<4
+      runArgs(1,31,0,0,0x4,1<<31), //1<<31 
+      runArgs(1,63,0,0,0x4,1<<31), //if rt is 6 bit, still 1<<31 (low bits)
+      runArgs(9,0,0,0,0x4,9), //not shifting anything
+      runArgs(2,31,0,0,0x4,0), //overflow, should get 0
+      //srl
+      runArgs(31,0,0,4,0x2,1), //31 >> 4 = 1
+      runArgs(59,0,0,31,0x2,0), //59>>31 = 0 *overflow
+      runArgs(8,0,0,3,0x2,1), // 2^3 >> 3 = 1
+      runArgs(5,0,0,0,0x2,5), //5 >> 0 = 5 
+      //srlv
+      runArgs(31,4,0,0,0x6,1), //31 >> 4 = 1
+      runArgs(59,31,0,0,0x6,0), //59>>31 = 0 *overflow
+      runArgs(8,3,0,0,0x6,1), // 2^3 >> 3 = 1
+      runArgs(5,0,0,0,0x6,5), //5 >> 0 = 5 
+      runArgs(-1,63,0,0,0x6,1), //low bits of rt, 2**32-1>>31
     };
     for(runArgs args : runs){
       //Note that rs, rt, rd addrs don't matter, only their values, so that

@@ -194,6 +194,8 @@ namespace pipeline{
         comp = rs | rt;
       } else if(func == "xor"){ 
         comp = rs ^ rt;
+      } else if(func == "nor"){ 
+        comp = ~(rs | rt);
       } else if(func == "slt"){ //comparison
         comp = ((mem::signedData32) rs < (mem::signedData32) rt) ? 1 : 0;
       } else if(func == "sltu"){ 

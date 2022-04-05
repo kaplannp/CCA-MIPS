@@ -11,8 +11,19 @@ namespace instruction{
   //Also, why does this work with const, but not without?
   const std::unordered_map<unsigned int, std::string> FUNC_2_MNEMONIC = 
     std::unordered_map<unsigned int, std::string>({
+        {0x23,"subu"},
         {0x21,"addu"},
-        {0x23,"subu"}
+        {0x0,"sll"},
+        {0x4,"sllv"},
+        {0x2,"srl"},
+        {0x6,"srlv"},
+        {0x8,"jr"},
+        {0x24,"and"},
+        {0x25,"or"},
+        {0x26,"xor"},
+        {0x27,"nor"},
+        {0x2a,"slt"},
+        {0x2b,"sltu"},
         });
 
   typedef std::bitset<32> InstrBits;
