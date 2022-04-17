@@ -161,7 +161,7 @@ namespace pipeline{
   }
 
   void* Execute::getOut(){
-    mem::data32 comp;
+    mem::data64 comp;
     std::string instrType = args.instr.getType();
     std::cout << instrType << std::endl;
     if(instrType == "R-Type"){
@@ -172,34 +172,57 @@ namespace pipeline{
       mem::data32 rt = args.regVals[1];
       mem::data32 rd = args.regVals[2];
       std::bitset<6>* shamtBits = args.instr.getSlice(6,11);
-      unsigned long shamt = shamtBits->to_ulong();
+      mem::data32 shamt = shamtBits->to_ulong();
       delete shamtBits;
       if(func == "subu"){
-        comp = rt-rs;
+        comp = (mem::data32) (rt-rs);
+      } else if(func == "sub"){
+        //no trapping so does same thing
+        comp = (mem::data32) (rt-rs);
       } else if(func == "addu"){
-        comp = rt+rs;
+        comp = (mem::data32) (rt+rs);
+      } else if(func == "add"){
+        //no trapping so does same thing
+        comp = (mem::data32) (rt+rs);
       } else if(func == "sll"){ //shifts
-        comp = rs << shamt;
+        comp = (mem::data32) (rs << shamt);
       } else if(func == "sllv"){ 
-        comp = rs << (rt & 0b11111); //The & gets lower order 5 bits
+        comp = (mem::data32) (rs << (rt & 0b11111)); //The & gets lower order 5 bits
       } else if(func == "srl"){ 
-        comp = rs >> shamt;
+        comp = (mem::data32) (rs >> shamt);
       } else if(func == "srlv"){ 
-        comp = rs >> (rt & 0b11111);
+        comp = (mem::data32) (rs >> (rt & 0b11111));
       } else if(func == "jr"){ 
-        comp = rs;
+        comp = (mem::data32) (rs);
       } else if(func == "and"){ //Logical
-        comp = rs & rt;
+        comp = (mem::data32) (rs & rt);
       } else if(func == "or"){ 
-        comp = rs | rt;
+        comp = (mem::data32) (rs | rt);
       } else if(func == "xor"){ 
-        comp = rs ^ rt;
+        comp = (mem::data32) (rs ^ rt);
       } else if(func == "nor"){ 
-        comp = ~(rs | rt);
+        comp = (mem::data32) (~(rs | rt));
       } else if(func == "slt"){ //comparison
         comp = ((mem::signedData32) rs < (mem::signedData32) rt) ? 1 : 0;
       } else if(func == "sltu"){ 
         comp = (rs < rt) ? 1 : 0;
+      } else if(func == "mult"){ 
+        //Yes, this casting is pretty wild, let me speak it to you.
+        //ya take in two unsigned 32 bit values, but you want to treat
+        //them as signed (first cast). Then ya gotta make sure if you overflow
+        //that is captured as long, (second cast)
+        comp = (mem::signedData64)(mem::signedData32)rs * 
+          (mem::signedData64)(mem::signedData32)rt;
+      } else if(func == "multu"){ 
+        comp = (mem::data64)rs * (mem::data64)rt;
+      } else if(func == "div"){ 
+        mem::data64 quotient = (mem::signedData64)rs / (mem::signedData64)rt;
+        mem::data64 rem = (mem::signedData64)rs % (mem::signedData64)rt;
+        comp = (rem << 32) + quotient;
+      } else if(func == "divu"){ 
+        mem::data64 quotient = (mem::data64)rs / (mem::data64)rt;
+        mem::data64 rem = (mem::data64)rs % (mem::data64)rt;
+        comp = (rem << 32) + quotient;
       }
       else {
         //Couldn't find the function specified, so unimplemented, so dying
@@ -209,6 +232,10 @@ namespace pipeline{
         //TODO come up with a nicer exception
         throw std::exception();
       }
+    }
+    //Now we're in I instr land
+    else if (instrType == "I-Type:beq"){
+      comp = 9;
     }
     else {
       //Whatever the type of this instruction, it hasn't been implemented

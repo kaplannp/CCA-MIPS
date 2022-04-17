@@ -18,10 +18,11 @@ BOOST_AUTO_TEST_SUITE( TestInstruction )
 
   BOOST_AUTO_TEST_CASE( TestRInstruction ){
     #define SIZE 13
-    std::string types[SIZE] = {"R-Type", "J-Type:j", "J-Type:jal", "I-Type:eq", 
-      "I-Type:ne", 
-      "I-Type:ddi", "I-Type:ddiu", "I-Type:lti", "I-Type:ltiu", "I-Type:ndi", 
-      "I-Type:ri", "I-Type:ori", "I-Type:ui"
+    std::string types[SIZE] = {"R-Type", "J-Type:j", "J-Type:jal", "I-Type:beq", 
+      "I-Type:bne", 
+      "I-Type:addi", "I-Type:addiu", "I-Type:slti", "I-Type:sltiu", 
+      "I-Type:andi", 
+      "I-Type:ori", "I-Type:xori", "I-Type:lui"
     };
     int codes[SIZE] = {
       0x0, 0x2, 0x3, 0x4, 0x5, 0x8, 0x9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf
@@ -167,6 +168,20 @@ BOOST_AUTO_TEST_SUITE( TestPipelinePhases )
     BOOST_CHECK(idOut3->regVals.empty());
   }
 
+  bool testIInstr(pipeline::PipelinePhase* ex, mem::data32 opcode, 
+      mem::data32 rs, mem::data32 rtOrRD, mem::data32 val, 
+      mem::data32 expected){
+    unsigned int instrVal = constructIInstr(opcode, rs, rtOrRD, val);
+    instruction::Instruction instr = instruction::Instruction(instrVal);
+    std::vector<mem::data32> regVals = {rs, rtOrRD};
+    pipeline::IDOut idOut = pipeline::IDOut(instr, regVals);
+    ex->execute(&idOut);
+    ex->updateCycle(1);
+    pipeline::EXOut* exOut = (pipeline::EXOut*) ex->getOut();
+    BOOST_CHECK_EQUAL(exOut->comp, expected);
+    return true;
+  }
+
   BOOST_AUTO_TEST_CASE( TestExecute ){
     pipeline::PipelinePhase* ex = new pipeline::Execute("EX");
     ex->updateCycle(1); // Burn the bubble 
@@ -176,18 +191,25 @@ BOOST_AUTO_TEST_SUITE( TestPipelinePhases )
       mem::data32 rd;
       unsigned int shamt;
       unsigned int func;
-      mem::data32 expected;
+      mem::data64 expected;
       runArgs( mem::data32 rs, mem::data32 rt, mem::data32 rd,
-          unsigned int shamt, unsigned int func, mem::data32 expected) : 
+          unsigned int shamt, unsigned int func, mem::data64 expected) : 
           rs{rs}, rt{rt}, rd{rd}, shamt{shamt}, func{func}, expected{expected}{}
     } runArgs;
+    unsigned int MAX_INT = -1;
+    //rs,rt,rd,shamt,func,expected
     std::vector<runArgs> runs = {
       //addu
       runArgs(2,4,0,0,0x21,6), //addu 2+4 = 6
       runArgs(-1,1,0,0,0x21,0), //addu -1+1 = 0 *note -1 = 4294967295
+      runArgs(-1,1,0,0,0x21,0), //addu -1+1 = 0 *note -1 = 4294967295
+      //add
+      runArgs(-1,1,0,0,0x20,0), //addu -1+1 = 0 *note -1 = 4294967295
       //subu
       runArgs(2,4,0,0,0x23,2), //subu 4-2 = 2
-      runArgs(1,0,0,0,0x23,-1), //subu 0-1 = -1 *note -1 = 4294967295
+      runArgs(1,0,0,0,0x23,(mem::data32)-1), //subu 0-1 = -1 *note -1 = 4294967295
+      //sub
+      runArgs(1,0,0,0,0x22,(mem::data32)-1), //subu 0-1 = -1 *note -1 = 4294967295
       //sll
       runArgs(1,0,0,31,0x0,std::pow(2,31)), //sll 1 << 31 = 2**31
       runArgs(2,0,0,31,0x0,0), //sll 2 << 31 = 0 *overflow
@@ -195,8 +217,8 @@ BOOST_AUTO_TEST_SUITE( TestPipelinePhases )
       runArgs(5,0,0,0,0x0,5), //sll 5 << 0 = 5 
       //sllv
       runArgs(2,4,0,0,0x4,2<<4), //2<<4 = 2<<4
-      runArgs(1,31,0,0,0x4,1<<31), //1<<31 
-      runArgs(1,63,0,0,0x4,1<<31), //if rt is 6 bit, still 1<<31 (low bits)
+      runArgs(1,31,0,0,0x4,(mem::data32)(1<<31)), //1<<31 
+      runArgs(1,63,0,0,0x4,(mem::data32)(1<<31)), //rt is 6bit, 1<<31 (low bits)
       runArgs(9,0,0,0,0x4,9), //not shifting anything
       runArgs(2,31,0,0,0x4,0), //overflow, should get 0
       //srl
@@ -210,6 +232,52 @@ BOOST_AUTO_TEST_SUITE( TestPipelinePhases )
       runArgs(8,3,0,0,0x6,1), // 2^3 >> 3 = 1
       runArgs(5,0,0,0,0x6,5), //5 >> 0 = 5 
       runArgs(-1,63,0,0,0x6,1), //low bits of rt, 2**32-1>>31
+      //jr
+      runArgs(81,0,0,0,0x8,81), 
+      runArgs(0,0,0,0,0x8,0), 
+      runArgs(-1,0,0,0,0x8,(mem::data32)-1), 
+      //and
+      runArgs(0,0,0,0,0x24,0), 
+      runArgs(-1,0,0,0,0x24,0), 
+      runArgs(43,99,0,0,0x24,43&99), 
+      //or
+      runArgs(0,0,0,0,0x25,0), 
+      runArgs(-1,0,0,0,0x25,(mem::data32)-1), 
+      runArgs(43,99,0,0,0x25,43|99), 
+      //xor
+      runArgs(0,0,0,0,0x26,0), 
+      runArgs(-1,0,0,0,0x26,(mem::data32)-1), 
+      runArgs(43,99,0,0,0x26,43^99), 
+      //nor
+      runArgs(0,0,0,0,0x27,(mem::data32)~0), 
+      runArgs(-1,0,0,0,0x27,~(-1)), 
+      runArgs(43,99,0,0,0x27,(mem::data32)~(43|99)), 
+      //slt
+      runArgs(0,0,0,0,0x2a,0), // 0 < 0
+      runArgs(-1,0,0,0,0x2a,1), // -1 < 0 signed
+      runArgs(43,99,0,0,0x2a,1), // 43<99
+      runArgs(99,43,0,0,0x2a,0), //99<43
+      runArgs(-99,-43,0,0,0x2a,1), //-99<-43
+      //sltu
+      runArgs(0,0,0,0,0x2b,0), // 0 < 0
+      runArgs(-1,0,0,0,0x2b,0), // -1 < 0 unsigned
+      runArgs(43,99,0,0,0x2b,1), // 43<99
+      runArgs(99,43,0,0,0x2b,0), //99<43
+      runArgs(-43,-98,0,0,0x2b,0), //-99<-43 unsigned
+    //rs,rt,rd,shamt,func,expected
+      //mult
+      runArgs(-43,-98,0,0,0x18,4214), //-99*-43 double neg
+      runArgs(43,98,0,0,0x18,4214), //99*43 no neg
+      runArgs(43,-98,0,0,0x18,-4214), //-99*43 one neg
+      runArgs(0,-98,0,0,0x18,0), //-99*43 mul 0
+      runArgs(2147483647,90,0,0,0x18,193273528230), //overflow 32, still in 64
+      //multu
+      runArgs(43,98,0,0,0x19,4214), //99*43 no neg
+      runArgs(1,-1,0,0,0x19,(1l<<32) - 1), //1 * -1 is treated unsigned
+      runArgs(0,-98,0,0,0x18,0), //-99*43 mul 0
+      runArgs(2147483647,90,0,0,0x18,193273528230), //overflow 32, still in 64
+      //div
+      //TODO left off here implement div
     };
     for(runArgs args : runs){
       //Note that rs, rt, rd addrs don't matter, only their values, so that
@@ -228,6 +296,8 @@ BOOST_AUTO_TEST_SUITE( TestPipelinePhases )
       pipeline::EXOut* exOut = (pipeline::EXOut*) ex->getOut();
       BOOST_CHECK_EQUAL(exOut->comp, args.expected);
     }
+    //ex, opcode, rs, rtOrRD, val, expected
+    BOOST_CHECK(testIInstr(ex,0x4,1,1,8,9)); //expected is pc+8=offset
   }
 
 BOOST_AUTO_TEST_SUITE_END()

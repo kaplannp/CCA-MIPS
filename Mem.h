@@ -9,7 +9,9 @@
 namespace mem{
 
   typedef unsigned int data32;
+  typedef long data64; 
   typedef int signedData32; //not used for storage, but can be used for cast
+  typedef long signedData64; //not used for storage, but can be used for cast
   /*
    * Base interface for all memory objects
    * Abstract class

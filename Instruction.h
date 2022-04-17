@@ -12,7 +12,9 @@ namespace instruction{
   const std::unordered_map<unsigned int, std::string> FUNC_2_MNEMONIC = 
     std::unordered_map<unsigned int, std::string>({
         {0x23,"subu"},
+        {0x22,"sub"},
         {0x21,"addu"},
+        {0x20, "add"},
         {0x0,"sll"},
         {0x4,"sllv"},
         {0x2,"srl"},
@@ -24,6 +26,10 @@ namespace instruction{
         {0x27,"nor"},
         {0x2a,"slt"},
         {0x2b,"sltu"},
+        {0x18,"mult"},
+        {0x19,"multu"},
+        {0x1a,"div"},
+        {0x1b,"divu"},
         });
 
   typedef std::bitset<32> InstrBits;

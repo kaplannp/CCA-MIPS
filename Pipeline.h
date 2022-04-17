@@ -231,9 +231,9 @@ namespace pipeline{
   typedef struct EXOut {
     instruction::Instruction instr;
     std::vector<mem::data32> regVals;
-    mem::data32 comp;
+    mem::data64 comp;
     EXOut(instruction::Instruction instr, std::vector<mem::data32> regVals,
-        mem::data32 comp) : instr{instr}, regVals{regVals}, comp{comp}{};
+        mem::data64 comp) : instr{instr}, regVals{regVals}, comp{comp}{};
   } EXOut;
 
   /*

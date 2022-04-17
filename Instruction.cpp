@@ -60,21 +60,21 @@ namespace instruction{
 //Initialize OPCODE
   const std::unordered_map<std::bitset<6>, std::string> Instruction::OPCODE2STR = 
     std::unordered_map<std::bitset<6>, std::string>(
-        {
-           {std::bitset<6>(0), "R-Type"},
-           {std::bitset<6>(0x2), "J-Type:j"},
-           {std::bitset<6>(0x3), "J-Type:jal"},
-           {std::bitset<6>(0x4), "I-Type:eq"},
-           {std::bitset<6>(0x5), "I-Type:ne"},
-           {std::bitset<6>(0x8), "I-Type:ddi"},
-           {std::bitset<6>(0x9), "I-Type:ddiu"},
-           {std::bitset<6>(0xa), "I-Type:lti"},
-           {std::bitset<6>(0xb), "I-Type:ltiu"},
-           {std::bitset<6>(0xc), "I-Type:ndi"},
-           {std::bitset<6>(0xd), "I-Type:ri"},
-           {std::bitset<6>(0xe), "I-Type:ori"},
-           {std::bitset<6>(0xf), "I-Type:ui"}
-        }
+      {
+        {std::bitset<6>(0), "R-Type"},
+        {std::bitset<6>(0x2), "J-Type:j"},
+        {std::bitset<6>(0x3), "J-Type:jal"},
+        {std::bitset<6>(0x4), "I-Type:beq"},
+        {std::bitset<6>(0x5), "I-Type:bne"},
+        {std::bitset<6>(0x8), "I-Type:addi"},
+        {std::bitset<6>(0x9), "I-Type:addiu"},
+        {std::bitset<6>(0xa), "I-Type:slti"},
+        {std::bitset<6>(0xb), "I-Type:sltiu"},
+        {std::bitset<6>(0xc), "I-Type:andi"},
+        {std::bitset<6>(0xd), "I-Type:ori"},
+        {std::bitset<6>(0xe), "I-Type:xori"},
+        {std::bitset<6>(0xf), "I-Type:lui"}
+      }
    );
 
 //Operators

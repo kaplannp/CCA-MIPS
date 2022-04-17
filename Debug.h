@@ -1,5 +1,6 @@
 #include<iostream>
 #include<bitset>
+
 /*
  * takes in the values of each subset of an R instruction, and returns the 
  * integer value of the instruction
@@ -41,4 +42,15 @@ unsigned int constructJInstr(unsigned int opcode, unsigned int val){
   return instr;
 }
 
-
+//TODO I can't use severity?
+//https://www.boost.org/doc/libs/1_79_0/libs/log/doc/html/log/tutorial/sinks.html
+//void initLog(){
+//  boost::log::add_file_log("out.log");
+//  
+//  //filter the log
+//  boost::log::core::get()->set_filter
+//    (
+//        boost::log::trivial::severity >= boost::log::trivial::info
+//    );
+//
+//}
