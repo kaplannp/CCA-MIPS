@@ -8,6 +8,21 @@
 
 namespace pipeline{
 
+  //Out classes 
+  PCOut::PCOut(unsigned int addr) : addr{addr}{}
+  PCOut::PCOut() : addr{0}{}
+
+  IFOut::IFOut(const instruction::Instruction& instr) : 
+    instr{instruction::Instruction(instr)} {};
+  IFOut::IFOut() : instr{instruction::Instruction(0)}{};
+
+  IDOut::IDOut(instruction::Instruction instr, std::vector<mem::data32> regVals)
+    : instr{instr}, regVals{regVals}{};
+  IDOut::IDOut(): instr{instruction::Instruction(0)}, regVals(0){};
+
+  EXOut::EXOut(instruction::Instruction instr, std::vector<mem::data32> regVals,
+      mem::data64 comp) : instr{instr}, regVals{regVals}, comp{comp}{};
+  EXOut::EXOut() : instr{instruction::Instruction(0)}, regVals(0), comp{0}{};
   bool PipelinePhase::checkInvariants() const{
     return checkCyclesRemaining();
   }
@@ -57,9 +72,6 @@ namespace pipeline{
     setCyclesRemaining(cyclesRemaining - cycleChange);
   }
 
-  PCOut::PCOut(unsigned int addr) : addr{addr}{}
-  PCOut::PCOut() : addr{0}{}
-
 
   //TODO If I change the brackets to () I don't get compiler error, I get
   //linker obscure error?
@@ -71,10 +83,10 @@ namespace pipeline{
 
   void InstructionFetch::execute(StageOut* args){
     assert(canUpdateArgs());
-    this->args = *( (PCOut*) args );
+    this->args = (PCOut*) args;
     setCyclesRemaining(1);
     BOOST_LOG_TRIVIAL(debug) << "<<" + getName() + ">> " << "executing args"
-      " with address " << this->args.addr << std::endl;
+      " with address " << this->args->addr << std::endl;
   }
 
   StageOut* InstructionFetch::getOut(){
@@ -87,11 +99,10 @@ namespace pipeline{
         " may not be finished executing. " << e.what();
       throw e;
     }
-    unsigned int addr = args.addr;
+    unsigned int addr = args->addr;
     mem::data32 instrInt = mem.ld(addr);
     instruction::Instruction instr = instruction::Instruction(instrInt);
     IFOut* out = new IFOut(instr);
-    out->instr = instr; 
     return out;
   }
 
@@ -110,9 +121,9 @@ namespace pipeline{
   void InstructionDecode::execute(StageOut* args){
     assert(canUpdateArgs());
     this->cyclesRemaining = 1;
-    this->args = *((IFOut*) args);
+    this->args = (IFOut*) args;
     BOOST_LOG_TRIVIAL(debug) << "<<" + getName() + ">> " << "executing args"
-      " with instruction " << this->args.instr.toString() << std::endl;
+      " with instruction " << this->args->instr.toString() << std::endl;
   }
 
   StageOut* InstructionDecode::getOut(){
@@ -126,29 +137,29 @@ namespace pipeline{
       throw e;
     }
     std::vector<mem::data32> regVals;
-    if(args.instr.getType().find("R-Type") != std::string::npos){
+    if(args->instr.getType().find("R-Type") != std::string::npos){
       //Is R-Type
       regVals = std::vector<mem::data32>(3);
-      std::bitset<5> rs = args.instr.getSlice<21,26>();
-      std::bitset<5> rt = args.instr.getSlice<16,21>();
-      std::bitset<5> rd = args.instr.getSlice<11,16>();
+      std::bitset<5> rs = args->instr.getSlice<21,26>();
+      std::bitset<5> rt = args->instr.getSlice<16,21>();
+      std::bitset<5> rd = args->instr.getSlice<11,16>();
       regVals[0] = loadReg(rs);
       regVals[1] = loadReg(rt);
       regVals[2] = loadReg(rd);
-    } else if(args.instr.getType().find("I-Type") != std::string::npos){
+    } else if(args->instr.getType().find("I-Type") != std::string::npos){
       //Is I-Type
       regVals = std::vector<mem::data32>(2);
-      std::bitset<5> rs = args.instr.getSlice<21,26>();
+      std::bitset<5> rs = args->instr.getSlice<21,26>();
       //depending on the type, this next register may be rt or Rd. It doesn't
       //matter at this stage
-      std::bitset<5> rtOrRd = args.instr.getSlice<16,21>();
+      std::bitset<5> rtOrRd = args->instr.getSlice<16,21>();
       regVals[0] = loadReg(rs);
       regVals[1] = loadReg(rtOrRd);
     } else {
       //Is J-Type
       regVals = std::vector<mem::data32>(0);
     }
-    IDOut* out = new IDOut(args.instr, regVals);
+    IDOut* out = new IDOut(args->instr, regVals);
     return out;
   }
 
@@ -158,23 +169,23 @@ namespace pipeline{
 
   void Execute::execute(StageOut* args){
     assert(canUpdateArgs());
-    this->args = *( (IDOut*) args );
+    this->args = (IDOut*) args;
     setCyclesRemaining(1);
     BOOST_LOG_TRIVIAL(debug) << "<<" + getName() + ">> " << "executing args"
-      " with instruction " << this->args.instr.toString() << std::endl;
+      " with instruction " << this->args->instr.toString() << std::endl;
   }
 
   StageOut* Execute::getOut(){
     mem::data64 comp;
-    std::string instrType = args.instr.getType();
+    std::string instrType = args->instr.getType();
     if(instrType == "R-Type"){
       //Is R-Type
       //initialize some helpful vars for the func type
-      std::string func = args.instr.getFuncType();
-      mem::data32 rs = args.regVals[0];
-      mem::data32 rt = args.regVals[1];
-      mem::data32 rd = args.regVals[2];
-      std::bitset<5> shamtBits = args.instr.getSlice<6,11>();
+      std::string func = args->instr.getFuncType();
+      mem::data32 rs = args->regVals[0];
+      mem::data32 rt = args->regVals[1];
+      mem::data32 rd = args->regVals[2];
+      std::bitset<5> shamtBits = args->instr.getSlice<6,11>();
       mem::data32 shamt = shamtBits.to_ulong();
       if(func == "subu"){
         comp = (mem::data32) (rt-rs);
@@ -237,9 +248,9 @@ namespace pipeline{
     }
     //Now we're in I instr land
     else if (instrType.find("I-Type") != std::string::npos){
-      mem::data32 rs = args.regVals[0];
-      mem::data32 rt = args.regVals[1];
-      mem::data32 immediate = args.instr.getSlice<0,16>().to_ulong();
+      mem::data32 rs = args->regVals[0];
+      mem::data32 rt = args->regVals[1];
+      mem::data32 immediate = args->instr.getSlice<0,16>().to_ulong();
       if (instrType == "I-Type:beq"){
         comp = rs==rt;
       } else if (instrType == "I-Type:bne"){
@@ -292,7 +303,7 @@ namespace pipeline{
     }
     //You've done the heavy lifting at this point. Now you just assemble the
     //struct
-    EXOut* exOut = new EXOut(args.instr, args.regVals, comp);
+    EXOut* exOut = new EXOut(args->instr, args->regVals, comp);
     return exOut;
   }
 

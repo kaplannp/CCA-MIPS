@@ -25,6 +25,58 @@ namespace pipeline{
       StageOut();
   };
 
+  class PCOut: public StageOut {
+    public:
+      PCOut(unsigned int addr);
+      PCOut();
+      const unsigned int addr;
+  };
+
+  class IFOut : public StageOut { 
+    public:
+    const instruction::Instruction instr;
+    IFOut(const instruction::Instruction& instr);
+    IFOut();
+  };
+
+  /*
+   * Ouput of an Execute pipeline phase.
+   * Builds upon the IDOut by adding a comp field for the result of the
+   * computation.
+   */
+  class EXOut : public StageOut {
+    public:
+      const instruction::Instruction instr;
+      const std::vector<mem::data32> regVals;
+      const mem::data64 comp;
+      EXOut(instruction::Instruction instr, std::vector<mem::data32> regVals,
+          mem::data64 comp);
+      EXOut();
+  };
+
+
+  /*
+   * This represents the output of an Instruction Decode Phase. The first
+   * element is the instruction that was being processed. The second element is
+   * the register values that were loaded. This second element merits an
+   * explanation.
+   *
+   * std::vector<mem::data32> regVals is a vector of loaded data values. It has
+   * variable length because the number of registers loaded is dependent
+   * upon the instruction. The order of the registers is the same as in the
+   * machine encoding of the instruction. For example, an R-Type instruction
+   * uses three registers, rs, rt, rd, so the vector will be {ld(rs), ld(rt),
+   * ld(rd)}
+   */
+  class IDOut : public StageOut {
+    public:
+      const instruction::Instruction instr;
+      const std::vector<mem::data32> regVals;
+      IDOut(instruction::Instruction instr, std::vector<mem::data32> regVals);
+      IDOut();
+  };
+
+
   /*
    * This is the core abstract class for a pipeline phase
    * TODO add destructor
@@ -108,21 +160,6 @@ namespace pipeline{
       virtual StageOut* getOut() = 0;
   };
 
-  class PCOut: public StageOut {
-    public:
-      PCOut(unsigned int addr);
-      PCOut();
-      const unsigned int addr;
-  };
-
-  //TODO gotta figure out how to destroy this now
-  typedef struct IFOut{
-    instruction::Instruction instr;
-    IFOut(const instruction::Instruction& instr): instr{
-      instruction::Instruction(instr)}{};
-    //This is necessary for initialization of Decode
-    IFOut(): instr{instruction::Instruction(0)}{};
-  } IFOut;
   /*
    * Child of Pipeline, InstructionFetch
    * TODO add destructor
@@ -133,7 +170,7 @@ namespace pipeline{
       /* Note that this object does not have responisbility to clean mem*/
       mem::MemoryUnit& mem;
       /* arguments for the current instruction (output from previous stage) */
-      PCOut args;
+      PCOut* args;
 
     public:
 
@@ -163,29 +200,6 @@ namespace pipeline{
   };
 
 
-  //TODO Not sure who has responsibility of destroying this, but someone better
-  //do it
-  /*
-   * This represents the output of an Instruction Decode Phase. The first
-   * element is the instruction that was being processed. The second element is
-   * the register values that were loaded. This second element merits an
-   * explanation.
-   *
-   * std::vector<mem::data32> regVals is a vector of loaded data values. It has
-   * variable length because the number of registers loaded is dependent
-   * upon the instruction. The order of the registers is the same as in the
-   * machine encoding of the instruction. For example, an R-Type instruction
-   * uses three registers, rs, rt, rd, so the vector will be {ld(rs), ld(rt),
-   * ld(rd)}
-   */
-  typedef struct IDOut {
-    instruction::Instruction instr;
-    std::vector<mem::data32> regVals;
-    IDOut(instruction::Instruction instr, std::vector<mem::data32> regVals)
-      : instr{instr}, regVals{regVals}{};
-    IDOut(): instr{instruction::Instruction(0)}, regVals(0){};
-  } IDOut;
-
   /*
    * Much of the actual decoding of instructions is delegated to the Instruction
    * class, but this still leaves some things, most importantly register fetch,
@@ -195,7 +209,7 @@ namespace pipeline{
   class InstructionDecode: public PipelinePhase {
     private:
       mem::MemoryUnit& rf;
-      IFOut args;
+      IFOut* args;
       /*
        * loads a register give nthe required address
        * params:
@@ -234,25 +248,12 @@ namespace pipeline{
   };
   
   /*
-   * Ouput of an Execute pipeline phase.
-   * Builds upon the IDOut by adding a comp field for the result of the
-   * computation.
-   */
-  typedef struct EXOut {
-    instruction::Instruction instr;
-    std::vector<mem::data32> regVals;
-    mem::data64 comp;
-    EXOut(instruction::Instruction instr, std::vector<mem::data32> regVals,
-        mem::data64 comp) : instr{instr}, regVals{regVals}, comp{comp}{};
-  } EXOut;
-
-  /*
    * This is the class responsible for the execution phase of the pipeline
    * Decides what operation needs to be done and executes it.
    */
   class Execute: public PipelinePhase {
     private:
-      IDOut args;
+      IDOut* args;
       //TODO would be nice to have a hashtable of string mnemonic to function
       //like this 
       //typedef int (*IntFunctionWithOneParameter) (int a);
