@@ -6,9 +6,9 @@ using namespace std;
 int main(){
   unsigned int x1 = -1;
   unsigned int x2 = 4;
-  unsigned long resLong = x1*x2;
-  unsigned int resInt = x1*x2;
-  cout << "raw " << x1*x2 << endl;
-  cout << "long " << resLong << endl;
-  cout << "int " << resInt << endl;
+  short x3 = 0;
+  cout << x2 % x1 << endl;
+  cout << x2 / x1 << endl;
+  cout << bool(1) << endl;
+  cout << sizeof(x1) << " , " <<  sizeof(x3) << endl;
 }

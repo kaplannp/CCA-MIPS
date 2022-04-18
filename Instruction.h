@@ -57,7 +57,15 @@ namespace instruction{
        *   end: the end index not included
        * returns instr[start:end)
        */
-      std::bitset<6>* getSlice(int start, int end) const;
+      template<int start, int end>
+      std::bitset<end-start> getSlice() const{
+        const size_t width = end - start;
+        std::bitset<width> slice = std::bitset<width>(0);
+        for(int i = start; i < end; i++){
+          slice.set(i-start, instr[i]);
+        }
+        return slice;
+      }
       /*
        * params:
        *   opcode: the 6 high order bits organized 26:31. That is the opcode

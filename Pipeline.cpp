@@ -57,6 +57,10 @@ namespace pipeline{
     setCyclesRemaining(cyclesRemaining - cycleChange);
   }
 
+  PCOut::PCOut(unsigned int addr) : addr{addr}{}
+  PCOut::PCOut() : addr{0}{}
+
+
   //TODO If I change the brackets to () I don't get compiler error, I get
   //linker obscure error?
   InstructionFetch::InstructionFetch(std::string name, mem::MemoryUnit& mem):
@@ -65,7 +69,7 @@ namespace pipeline{
     cyclesRemaining = 0;
   }
 
-  void InstructionFetch::execute(void* args){
+  void InstructionFetch::execute(StageOut* args){
     assert(canUpdateArgs());
     this->args = *( (PCOut*) args );
     setCyclesRemaining(1);
@@ -73,7 +77,7 @@ namespace pipeline{
       " with address " << this->args.addr << std::endl;
   }
 
-  void* InstructionFetch::getOut(){
+  StageOut* InstructionFetch::getOut(){
     try{
       assert(!isBusy());
     } catch (std::exception& e){
@@ -98,12 +102,12 @@ namespace pipeline{
     cyclesRemaining = 1;
   }
 
-  mem::data32 InstructionDecode::loadReg(const std::bitset<6>& addr) const{
+  mem::data32 InstructionDecode::loadReg(const std::bitset<5>& addr) const{
     unsigned long addr_int = addr.to_ulong();
     return rf.ld(addr_int);
   }
 
-  void InstructionDecode::execute(void* args){
+  void InstructionDecode::execute(StageOut* args){
     assert(canUpdateArgs());
     this->cyclesRemaining = 1;
     this->args = *((IFOut*) args);
@@ -111,7 +115,7 @@ namespace pipeline{
       " with instruction " << this->args.instr.toString() << std::endl;
   }
 
-  void* InstructionDecode::getOut(){
+  StageOut* InstructionDecode::getOut(){
     try{
       assert(!isBusy());
     } catch (std::exception& e){
@@ -125,21 +129,21 @@ namespace pipeline{
     if(args.instr.getType().find("R-Type") != std::string::npos){
       //Is R-Type
       regVals = std::vector<mem::data32>(3);
-      std::bitset<6>* rs = args.instr.getSlice(21,26);
-      std::bitset<6>* rt = args.instr.getSlice(16,21);
-      std::bitset<6>* rd = args.instr.getSlice(11,16);
-      regVals[0] = loadReg(*rs);
-      regVals[1] = loadReg(*rt);
-      regVals[2] = loadReg(*rd);
+      std::bitset<5> rs = args.instr.getSlice<21,26>();
+      std::bitset<5> rt = args.instr.getSlice<16,21>();
+      std::bitset<5> rd = args.instr.getSlice<11,16>();
+      regVals[0] = loadReg(rs);
+      regVals[1] = loadReg(rt);
+      regVals[2] = loadReg(rd);
     } else if(args.instr.getType().find("I-Type") != std::string::npos){
       //Is I-Type
       regVals = std::vector<mem::data32>(2);
-      std::bitset<6>* rs = args.instr.getSlice(21,26);
+      std::bitset<5> rs = args.instr.getSlice<21,26>();
       //depending on the type, this next register may be rt or Rd. It doesn't
       //matter at this stage
-      std::bitset<6>* rtOrRd = args.instr.getSlice(16,21);
-      regVals[0] = loadReg(*rs);
-      regVals[1] = loadReg(*rtOrRd);
+      std::bitset<5> rtOrRd = args.instr.getSlice<16,21>();
+      regVals[0] = loadReg(rs);
+      regVals[1] = loadReg(rtOrRd);
     } else {
       //Is J-Type
       regVals = std::vector<mem::data32>(0);
@@ -152,7 +156,7 @@ namespace pipeline{
     cyclesRemaining = 1;
   }
 
-  void Execute::execute(void* args){
+  void Execute::execute(StageOut* args){
     assert(canUpdateArgs());
     this->args = *( (IDOut*) args );
     setCyclesRemaining(1);
@@ -160,10 +164,9 @@ namespace pipeline{
       " with instruction " << this->args.instr.toString() << std::endl;
   }
 
-  void* Execute::getOut(){
+  StageOut* Execute::getOut(){
     mem::data64 comp;
     std::string instrType = args.instr.getType();
-    std::cout << instrType << std::endl;
     if(instrType == "R-Type"){
       //Is R-Type
       //initialize some helpful vars for the func type
@@ -171,9 +174,8 @@ namespace pipeline{
       mem::data32 rs = args.regVals[0];
       mem::data32 rt = args.regVals[1];
       mem::data32 rd = args.regVals[2];
-      std::bitset<6>* shamtBits = args.instr.getSlice(6,11);
-      mem::data32 shamt = shamtBits->to_ulong();
-      delete shamtBits;
+      std::bitset<5> shamtBits = args.instr.getSlice<6,11>();
+      mem::data32 shamt = shamtBits.to_ulong();
       if(func == "subu"){
         comp = (mem::data32) (rt-rs);
       } else if(func == "sub"){
@@ -216,12 +218,12 @@ namespace pipeline{
       } else if(func == "multu"){ 
         comp = (mem::data64)rs * (mem::data64)rt;
       } else if(func == "div"){ 
-        mem::data64 quotient = (mem::signedData64)rs / (mem::signedData64)rt;
-        mem::data64 rem = (mem::signedData64)rs % (mem::signedData64)rt;
+        mem::data64 quotient = (mem::signedData32)rs / (mem::signedData32)rt;
+        mem::data64 rem = (mem::signedData32)rs % (mem::signedData32)rt;
         comp = (rem << 32) + quotient;
       } else if(func == "divu"){ 
-        mem::data64 quotient = (mem::data64)rs / (mem::data64)rt;
-        mem::data64 rem = (mem::data64)rs % (mem::data64)rt;
+        mem::data64 quotient = rs / rt;
+        mem::data64 rem = rs % rt;
         comp = (rem << 32) + quotient;
       }
       else {
@@ -234,8 +236,53 @@ namespace pipeline{
       }
     }
     //Now we're in I instr land
-    else if (instrType == "I-Type:beq"){
-      comp = 9;
+    else if (instrType.find("I-Type") != std::string::npos){
+      mem::data32 rs = args.regVals[0];
+      mem::data32 rt = args.regVals[1];
+      mem::data32 immediate = args.instr.getSlice<0,16>().to_ulong();
+      if (instrType == "I-Type:beq"){
+        comp = rs==rt;
+      } else if (instrType == "I-Type:bne"){
+        comp = rs != rt;
+      } else if (instrType == "I-Type:addi"){
+        comp = (mem::signedData32) rs + (short)immediate;
+      } else if (instrType == "I-Type:addiu"){
+        comp = (mem::signedData32) rs + (short)immediate;
+      } else if (instrType == "I-Type:slti"){
+        comp =  (mem::signedData32) rs < (short) immediate;
+      } else if (instrType == "I-Type:sltiu"){
+        comp = rs < (unsigned short)immediate;
+      } else if (instrType == "I-Type:andi"){
+        comp = (unsigned short) rs & (unsigned short) immediate;
+      } else if (instrType == "I-Type:ori"){
+        comp = (unsigned short) rs | (unsigned short) immediate;
+      } else if (instrType == "I-Type:xori"){
+        comp = (unsigned short) rs ^ (unsigned short) immediate;
+      } else if (instrType == "I-Type:lui"){
+        comp = ((unsigned short) immediate) << 16;
+      //lb to lwu do same thing just an add
+      } else if (instrType == "I-Type:lb"){
+        comp = (mem::signedData32) rs + (short)immediate;
+      } else if (instrType == "I-Type:lh"){
+        comp = (mem::signedData32) rs + (short)immediate;
+      } else if (instrType == "I-Type:lw"){
+        comp = (mem::signedData32) rs + (short)immediate;
+      } else if (instrType == "I-Type:lbu"){
+        comp = (mem::signedData32) rs + (short)immediate;
+      } else if (instrType == "I-Type:lhu"){
+        comp = (mem::signedData32) rs + (short)immediate;
+      } else if (instrType == "I-Type:lwu"){
+        comp = (mem::signedData32) rs + (short)immediate;
+      } else if (instrType == "I-Type:sb"){
+        comp = (mem::signedData32) rt + (short)immediate;
+      } else if (instrType == "I-Type:sh"){
+        comp = (mem::signedData32) rt + (short)immediate;
+      } else if (instrType == "I-Type:sw"){
+        comp = (mem::signedData32) rt + (short)immediate;
+      }
+    }
+    else if (instrType.find("J-Type") != std::string::npos){
+      comp = 0;
     }
     else {
       //Whatever the type of this instruction, it hasn't been implemented

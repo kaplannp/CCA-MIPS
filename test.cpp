@@ -170,16 +170,22 @@ BOOST_AUTO_TEST_SUITE( TestPipelinePhases )
 
   bool testIInstr(pipeline::PipelinePhase* ex, mem::data32 opcode, 
       mem::data32 rs, mem::data32 rtOrRD, mem::data32 val, 
-      mem::data32 expected){
-    unsigned int instrVal = constructIInstr(opcode, rs, rtOrRD, val);
+      mem::data64 expected){
+    //Note the 1, 2 would be addresses, but not necessary cause in this case
+    //rs and rt are the actual data
+    unsigned int instrVal = constructIInstr(opcode, 1, 2, val);
     instruction::Instruction instr = instruction::Instruction(instrVal);
     std::vector<mem::data32> regVals = {rs, rtOrRD};
     pipeline::IDOut idOut = pipeline::IDOut(instr, regVals);
     ex->execute(&idOut);
     ex->updateCycle(1);
     pipeline::EXOut* exOut = (pipeline::EXOut*) ex->getOut();
-    BOOST_CHECK_EQUAL(exOut->comp, expected);
-    return true;
+    bool result =  exOut->comp == expected;
+    if(!result){
+      std::cout << "expected " << expected << ", but got " << exOut->comp 
+        << std::endl;
+    }
+    return result;
   }
 
   BOOST_AUTO_TEST_CASE( TestExecute ){
@@ -277,7 +283,14 @@ BOOST_AUTO_TEST_SUITE( TestPipelinePhases )
       runArgs(0,-98,0,0,0x18,0), //-99*43 mul 0
       runArgs(2147483647,90,0,0,0x18,193273528230), //overflow 32, still in 64
       //div
-      //TODO left off here implement div
+      runArgs(100,10,0,0,0x1a,10), //simple div. No rem
+      runArgs(100,-10,0,0,0x1a,-10), //neg div. No rem
+      runArgs(-100,-10,0,0,0x1a,10), //2neg div. No rem
+      runArgs(101,10,0,0,0x1a,(1l<<32) + 10), //div with rem 1
+      runArgs(4,-1,0,0,0x1a,-4), //div with rem 1
+      //divu
+      runArgs(100,10,0,0,0x1b,10), //simple div. No rem
+      runArgs(101,10,0,0,0x1a,(1l<<32) + 10), //div with rem 1
     };
     for(runArgs args : runs){
       //Note that rs, rt, rd addrs don't matter, only their values, so that
@@ -297,7 +310,57 @@ BOOST_AUTO_TEST_SUITE( TestPipelinePhases )
       BOOST_CHECK_EQUAL(exOut->comp, args.expected);
     }
     //ex, opcode, rs, rtOrRD, val, expected
-    BOOST_CHECK(testIInstr(ex,0x4,1,1,8,9)); //expected is pc+8=offset
+    //beq
+    BOOST_CHECK(testIInstr(ex,0x4,1,1,0,1)); //expected is rs==rt
+    //bne
+    BOOST_CHECK(testIInstr(ex,0x5,1,1,0,0)); //expected is rs==rt
+    //addi
+    BOOST_CHECK(testIInstr(ex,0x8,1,0,1,2)); //1+1
+    BOOST_CHECK(testIInstr(ex,0x8,1,0,-1,0)); //1+1
+    BOOST_CHECK(testIInstr(ex,0x8,1,0,-2,-1l)); //1+1
+    //addiu
+    BOOST_CHECK(testIInstr(ex,0x9,1,0,1,2)); //1+1
+    BOOST_CHECK(testIInstr(ex,0x9,1,0,-2,-1l)); //1+1
+    //slti
+    BOOST_CHECK(testIInstr(ex,0xa,1,0,90,1)); // 1 < 0
+    BOOST_CHECK(testIInstr(ex,0xa,1,0,0,0)); // 1 > 0
+    BOOST_CHECK(testIInstr(ex,0xa,0,0,0,0)); // 0 le 0, so false
+    BOOST_CHECK(testIInstr(ex,0xa,9,0,-10,0)); // 9 < -10 false
+    BOOST_CHECK(testIInstr(ex,0xa,9,0,-10,0)); // 9 < -10 false
+    BOOST_CHECK(testIInstr(ex,0xa,-9,0,-10,0)); // -9 > -10 false
+    //sltiu
+    BOOST_CHECK(testIInstr(ex,0xb,1,0,90,1)); // 1 < 90 true
+    BOOST_CHECK(testIInstr(ex,0xb,1,0,0,0)); // 1 < 0 false
+    BOOST_CHECK(testIInstr(ex,0xb,0,0,-1,1)); // 0 < big num, so true
+    BOOST_CHECK(testIInstr(ex,0xb,0,0,0,0)); // 0 !< 0 false
+    //andi
+    BOOST_CHECK(testIInstr(ex,0xc,5,0,5,5)); // 5&5 = 5
+    BOOST_CHECK(testIInstr(ex,0xc,-1,0,5,5)); // True & 5 = 5
+    BOOST_CHECK(testIInstr(ex,0xc,0,0,5,0)); // False &5 = 0
+    BOOST_CHECK(testIInstr(ex,0xc,0,0,0,0)); // False & False = 0
+    //ori
+    BOOST_CHECK(testIInstr(ex,0xd,5,0,5,5)); // 5|5 = 5
+    BOOST_CHECK(testIInstr(ex,0xd,-1,0,0,(1 << 16) - 1)); // True | False = -1
+    BOOST_CHECK(testIInstr(ex,0xd,0,0,5,5)); // False | 5 = 5
+    BOOST_CHECK(testIInstr(ex,0xd,0,0,0,0)); // False | False = 0
+    //xori
+    BOOST_CHECK(testIInstr(ex,0xe,-1,0,0,(1 << 16) - 1)); // True ^ False = -1
+    BOOST_CHECK(testIInstr(ex,0xe,0,0,0,0)); // False ^ False = 0
+    BOOST_CHECK(testIInstr(ex,0xe,-1,0,-1,0)); // True ^ True = 0
+    BOOST_CHECK(testIInstr(ex,0xe,1,0,0,1)); // 1 ^ 0 = 1
+    //lui (load upper immediate)
+    BOOST_CHECK(testIInstr(ex,0xf,0,0,-1,((short) -1) << 16)); 
+    BOOST_CHECK(testIInstr(ex,0xf,0,0,0,0)); // False ^ False = 0
+    BOOST_CHECK(testIInstr(ex,0xf,0,0,5,5 << 16)); // True ^ True = 0
+    //lw
+    BOOST_CHECK(testIInstr(ex,0x23,1,0,-2,-1l)); //1-2
+    BOOST_CHECK(testIInstr(ex,0x23,7,0,9,16)); //7+9
+    //sw
+    BOOST_CHECK(testIInstr(ex,0x2b,0,1,-2,-1l)); //1-2
+    BOOST_CHECK(testIInstr(ex,0x2b,0,1,1,2)); //1+1
+    //j/jal (always return 0. nothing to do for ALU)
+    BOOST_CHECK(testIInstr(ex,0x2,0,0,40,0)); 
+    BOOST_CHECK(testIInstr(ex,0x3,0,0,0,0)); 
   }
 
 BOOST_AUTO_TEST_SUITE_END()

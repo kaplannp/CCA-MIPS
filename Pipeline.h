@@ -16,6 +16,14 @@
  */
 namespace pipeline{
 
+  /*
+   * This class looks simple, and it is. It's purpose is to provide a class
+   * of data carrying classes for output of pipeline stages
+   */
+  class StageOut{
+    public:
+      StageOut();
+  };
 
   /*
    * This is the core abstract class for a pipeline phase
@@ -95,15 +103,17 @@ namespace pipeline{
        * returns:
        *   the instruction that was being worked on
        */
-      virtual void execute(void* args) = 0;
+      virtual void execute(StageOut* args) = 0;
 
-      virtual void* getOut() = 0;
+      virtual StageOut* getOut() = 0;
   };
 
-
-  typedef struct PCOut{
-    unsigned int addr;
-  } PCOut;
+  class PCOut: public StageOut {
+    public:
+      PCOut(unsigned int addr);
+      PCOut();
+      const unsigned int addr;
+  };
 
   //TODO gotta figure out how to destroy this now
   typedef struct IFOut{
@@ -146,9 +156,9 @@ namespace pipeline{
        * returns:
        *   the instruction that was being worked on
        */
-      void execute(void* args);
+      void execute(StageOut* args);
 
-      void* getOut();
+      StageOut* getOut();
 
   };
 
@@ -192,7 +202,7 @@ namespace pipeline{
        *   addr: the bits corresponding to the requested address
        * returns: the value in the register file at that address
        */
-      mem::data32 loadReg(const std::bitset<6>& addr) const;
+      mem::data32 loadReg(const std::bitset<5>& addr) const;
     
     public:
 
@@ -207,7 +217,7 @@ namespace pipeline{
        * returns:
        *   the instruction that was being worked on
        */
-      void execute(void* args);
+      void execute(StageOut* args);
 
       /*
        * does necessary computation for whichever arguments are currently
@@ -219,7 +229,7 @@ namespace pipeline{
        *     I-Type: size 2, {rs, rt/rd}
        *     J-Type: size 0
        */
-      void* getOut();
+      StageOut* getOut();
 
   };
   
@@ -260,7 +270,7 @@ namespace pipeline{
        * returns:
        *   the instruction that was being worked on
        */
-      void execute(void* args);
+      void execute(StageOut* args);
 
       /*
        * does necessary computation for whichever arguments are currently
@@ -272,7 +282,7 @@ namespace pipeline{
        *     I-Type: size 2, {rs, rt/rd}
        *     J-Type: size 0
        */
-      void* getOut();
+      StageOut* getOut();
   };
 
 }

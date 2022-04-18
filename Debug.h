@@ -21,8 +21,8 @@ unsigned int constructRInstr(unsigned int rs, unsigned int rt, unsigned int rd,
  * takes in the values of each subset of an I instruction, and returns the 
  * integer value of the instruction
  */
-unsigned int constructIInstr(unsigned int opcode, unsigned int rs,
-    unsigned int rtOrRD, unsigned int val){
+unsigned int constructIInstr(unsigned int opcode, unsigned char rs,
+    unsigned char rtOrRD, unsigned short val){
   unsigned int instr = 0;
   instr += opcode << 26;
   instr += rs << 21;
