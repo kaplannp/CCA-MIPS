@@ -22,7 +22,7 @@ namespace pipeline{
    */
   class StageOut{
     public:
-      StageOut();
+      StageOut(){};
   };
 
   class PCOut: public StageOut {
@@ -151,11 +151,15 @@ namespace pipeline{
        * 1. It stores the arguments needed for this instruction
        * 3. It updates the cyclesRemaining
        * params: 
-       *   args: the arguments from last stage
+       *   args: the arguments from last stage. Should be a pointer to the
+       *     pointer to the StageOut. The double pointer is necessary just
+       *     so that you can make the original pointer NULL because you don't
+       *     want the user to ever use args again after it's been passed to
+       *     execute
        * returns:
        *   the instruction that was being worked on
        */
-      virtual void execute(StageOut* args) = 0;
+      virtual void execute(StageOut** args) = 0;
 
       virtual StageOut* getOut() = 0;
   };
@@ -193,7 +197,7 @@ namespace pipeline{
        * returns:
        *   the instruction that was being worked on
        */
-      void execute(StageOut* args);
+      void execute(StageOut** args);
 
       StageOut* getOut();
 
@@ -231,7 +235,7 @@ namespace pipeline{
        * returns:
        *   the instruction that was being worked on
        */
-      void execute(StageOut* args);
+      void execute(StageOut** args);
 
       /*
        * does necessary computation for whichever arguments are currently
@@ -271,7 +275,43 @@ namespace pipeline{
        * returns:
        *   the instruction that was being worked on
        */
-      void execute(StageOut* args);
+      void execute(StageOut** args);
+
+      /*
+       * does necessary computation for whichever arguments are currently
+       * stored.
+       * returns:
+       *   IDOut*, a pointer to struct with instruction and loaded registers.
+       *   contents of regVals varies on instr type:
+       *     R-Type: size 3, {rs, rt, rd}
+       *     I-Type: size 2, {rs, rt/rd}
+       *     J-Type: size 0
+       */
+      StageOut* getOut();
+  };
+
+  /*
+   * Memory Access Stage of pipeline is primarily responsible for
+   * reading/writing data to main mem, but also does some stuff with Acc
+   * and perhaps PC adds
+   */
+  class MemoryAccess: public PipelinePhase {
+    private:
+      EXOut* args;
+
+    public:
+      MemoryAccess(std::string name);
+
+      /*
+       * This function does two things.
+       * 1. It stores the arguments needed for this instruction
+       * 2. It updates the cyclesRemaining
+       * params: 
+       *   args: of type PCOut containing the address to be looked up
+       * returns:
+       *   the instruction that was being worked on
+       */
+      void execute(StageOut** args);
 
       /*
        * does necessary computation for whichever arguments are currently

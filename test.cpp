@@ -61,6 +61,9 @@ BOOST_AUTO_TEST_SUITE( TestMemory )
     mem::MemoryUnit* m2 = new mem::DRAM(s2, mo2, "m2");
     for(int i = 0; i < s2; i++)
       BOOST_CHECK_EQUAL(m2->ld(i), mo2[i]);
+    //LEAKS! these move stuff from indirectly lost to directly
+    //delete m1;
+    //delete m2;
   }
 
 BOOST_AUTO_TEST_SUITE_END()
@@ -77,7 +80,7 @@ BOOST_AUTO_TEST_SUITE( TestPipelinePhases )
     m1->sw(5,10);
     pipeline::PipelinePhase* p = new pipeline::InstructionFetch("IF", *m1);
     BOOST_CHECK_EQUAL(p->getName(), "IF");
-    pipeline::PCOut args = {0};
+    pipeline::StageOut* args = new pipeline::PCOut(0);
     p->execute(&args);
     BOOST_CHECK(p->isBusy());
     p->updateCycle(1);
@@ -92,15 +95,18 @@ BOOST_AUTO_TEST_SUITE( TestPipelinePhases )
     instruction::Instruction instr2 = instruction::Instruction(10);
     pipeline::IFOut o1 = {instr1};
     pipeline::IFOut o2 = {instr2};
-    pipeline::IFOut trueOut = *( (pipeline::IFOut*) (p->getOut()));
+    pipeline::IFOut* trueOut = (pipeline::IFOut*) (p->getOut());
     //TODO in a better world, I would not specify getInstr because c++ would
     //call the operator I carefully designed. Alas
-    BOOST_CHECK_EQUAL(trueOut.instr.getInstr(), o1.instr.getInstr());
-    pipeline::PCOut op2 = {5}; //addr 5
+    BOOST_CHECK_EQUAL(trueOut->instr.getInstr(), o1.instr.getInstr());
+    pipeline::StageOut* op2 = new pipeline::PCOut(5); //addr 5
+    delete trueOut;
     p->execute(&op2);
     p->updateCycle(1);
-    trueOut = *( (pipeline::IFOut*) (p->getOut()));
-    BOOST_CHECK_EQUAL(trueOut.instr.getInstr(), o2.instr.getInstr());
+    trueOut = (pipeline::IFOut*) (p->getOut());
+    BOOST_CHECK_EQUAL(trueOut->instr.getInstr(), o2.instr.getInstr());
+    delete trueOut;
+    delete p;
   }
 
   BOOST_AUTO_TEST_CASE( TestID ){
@@ -123,15 +129,16 @@ BOOST_AUTO_TEST_SUITE( TestPipelinePhases )
     unsigned int instructionVal = constructRInstr(rs, rt, rd, shamt, func);
     instruction::Instruction instr = instruction::Instruction(instructionVal);
     BOOST_CHECK(instr.toString().find("R-Type") != std::string::npos);
-    pipeline::IFOut ifOut = pipeline::IFOut(instr);
+    pipeline::StageOut* ifOut = new pipeline::IFOut(instr);
     std::cout << "is busy is " << id->isBusy() << std::endl;
-    id->execute((void*)&ifOut);
+    id->execute(&ifOut);
     id->updateCycle(1); //pass one timestep
     //check for correct output
     pipeline::IDOut* idOut = (pipeline::IDOut*) id->getOut();
     for(int i = 0; i < 3; i++){
       BOOST_CHECK_EQUAL(idOut->regVals[i], regVals[i]);
     }
+    delete idOut;
     //Check an I-Type Instruction
     int opcode2 = 4;
     int rs2 = 15;
@@ -146,26 +153,29 @@ BOOST_AUTO_TEST_SUITE( TestPipelinePhases )
         instrVal);
     instruction::Instruction instr2 = instruction::Instruction(instructionVal2);
     BOOST_CHECK(instr2.toString().find("I-Type") != std::string::npos);
-    pipeline::IFOut ifOut2 = pipeline::IFOut(instr2);
-    id->execute((void*)&ifOut2);
+    pipeline::StageOut* ifOut2 = new pipeline::IFOut(instr2);
+    id->execute(&ifOut2);
     id->updateCycle(1); //pass one timestep
     //check for correct output
     pipeline::IDOut* idOut2 = (pipeline::IDOut*) id->getOut();
     for(int i = 0; i < idOut2->regVals.size(); i++){
       BOOST_CHECK_EQUAL(idOut2->regVals[i], regVals2[i]);
     }
+    delete idOut2;
     //Check a J-Type Instruction
     int opcode3 = 2;
     int instrVal3 = 32;
     unsigned int instructionVal3 = constructJInstr(opcode3, instrVal3);
     instruction::Instruction instr3 = instruction::Instruction(instructionVal3);
     BOOST_CHECK(instr3.getType().find("J-Type") != std::string::npos);
-    pipeline::IFOut ifOut3 = pipeline::IFOut(instr3);
-    id->execute((void*)&ifOut3);
+    pipeline::StageOut* ifOut3 = new pipeline::IFOut(instr3);
+    id->execute(&ifOut3);
     id->updateCycle(1); //pass one timestep
     //check for correct output
     pipeline::IDOut* idOut3 = (pipeline::IDOut*) id->getOut();
     BOOST_CHECK(idOut3->regVals.empty());
+    delete idOut3;
+    delete id;
   }
 
   bool testIInstr(pipeline::PipelinePhase* ex, mem::data32 opcode, 
@@ -176,7 +186,7 @@ BOOST_AUTO_TEST_SUITE( TestPipelinePhases )
     unsigned int instrVal = constructIInstr(opcode, 1, 2, val);
     instruction::Instruction instr = instruction::Instruction(instrVal);
     std::vector<mem::data32> regVals = {rs, rtOrRD};
-    pipeline::IDOut idOut = pipeline::IDOut(instr, regVals);
+    pipeline::StageOut* idOut = new pipeline::IDOut(instr, regVals);
     ex->execute(&idOut);
     ex->updateCycle(1);
     pipeline::EXOut* exOut = (pipeline::EXOut*) ex->getOut();
@@ -185,6 +195,7 @@ BOOST_AUTO_TEST_SUITE( TestPipelinePhases )
       std::cout << "expected " << expected << ", but got " << exOut->comp 
         << std::endl;
     }
+    delete exOut;
     return result;
   }
 
@@ -202,7 +213,6 @@ BOOST_AUTO_TEST_SUITE( TestPipelinePhases )
           unsigned int shamt, unsigned int func, mem::data64 expected) : 
           rs{rs}, rt{rt}, rd{rd}, shamt{shamt}, func{func}, expected{expected}{}
     } runArgs;
-    unsigned int MAX_INT = -1;
     //rs,rt,rd,shamt,func,expected
     std::vector<runArgs> runs = {
       //addu
@@ -303,11 +313,12 @@ BOOST_AUTO_TEST_SUITE( TestPipelinePhases )
       unsigned int instructionVal = constructRInstr(0, 0, 0, shamt, func);
       instruction::Instruction instr = instruction::Instruction(instructionVal);
       std::vector<mem::data32> regVals = {rs, rt, rd};
-      pipeline::IDOut idOut = pipeline::IDOut(instr, regVals);
+      pipeline::StageOut* idOut = new pipeline::IDOut(instr, regVals);
       ex->execute(&idOut);
       ex->updateCycle(1);
       pipeline::EXOut* exOut = (pipeline::EXOut*) ex->getOut();
       BOOST_CHECK_EQUAL(exOut->comp, args.expected);
+      delete exOut;
     }
     //ex, opcode, rs, rtOrRD, val, expected
     //beq
@@ -361,6 +372,14 @@ BOOST_AUTO_TEST_SUITE( TestPipelinePhases )
     //j/jal (always return 0. nothing to do for ALU)
     BOOST_CHECK(testIInstr(ex,0x2,0,0,40,0)); 
     BOOST_CHECK(testIInstr(ex,0x3,0,0,0,0)); 
+    //LEAKS! why do I even need this?
+    delete ex;
+  }
+
+  BOOST_AUTO_TEST_CASE( TestMemoryAccess ){
+    pipeline::PipelinePhase* ma = new pipeline::MemoryAccess("MA");
+    ma->updateCycle(1);
+
   }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -81,9 +81,14 @@ namespace pipeline{
     cyclesRemaining = 0;
   }
 
-  void InstructionFetch::execute(StageOut* args){
+  void InstructionFetch::execute(StageOut** args){
     assert(canUpdateArgs());
-    this->args = (PCOut*) args;
+    //Delete the old arguments
+    delete this->args;
+    //save the pointer to the arguments
+    this->args = (PCOut*) (*args);
+    //Nullify the old pointer so user can't use it anymore
+    *args = NULL;
     setCyclesRemaining(1);
     BOOST_LOG_TRIVIAL(debug) << "<<" + getName() + ">> " << "executing args"
       " with address " << this->args->addr << std::endl;
@@ -118,10 +123,15 @@ namespace pipeline{
     return rf.ld(addr_int);
   }
 
-  void InstructionDecode::execute(StageOut* args){
+  void InstructionDecode::execute(StageOut** args){
     assert(canUpdateArgs());
+    //Delete the old arguments
+    delete this->args;
     this->cyclesRemaining = 1;
-    this->args = (IFOut*) args;
+    //save the pointer to the Out
+    this->args = (IFOut*) *args;
+    //NULLIFY the users pointer
+    *args = NULL;
     BOOST_LOG_TRIVIAL(debug) << "<<" + getName() + ">> " << "executing args"
       " with instruction " << this->args->instr.toString() << std::endl;
   }
@@ -167,9 +177,14 @@ namespace pipeline{
     cyclesRemaining = 1;
   }
 
-  void Execute::execute(StageOut* args){
+  void Execute::execute(StageOut** args){
     assert(canUpdateArgs());
-    this->args = (IDOut*) args;
+    //Delete the old arguments
+    delete this->args;
+    //save the ptr to the struct
+    this->args = (IDOut*) *args;
+    //Nullify the ptr for user cause they should never use again
+    *args = NULL;
     setCyclesRemaining(1);
     BOOST_LOG_TRIVIAL(debug) << "<<" + getName() + ">> " << "executing args"
       " with instruction " << this->args->instr.toString() << std::endl;
@@ -306,5 +321,24 @@ namespace pipeline{
     EXOut* exOut = new EXOut(args->instr, args->regVals, comp);
     return exOut;
   }
+
+  MemoryAccess::MemoryAccess(std::string name) : PipelinePhase(name){
+    cyclesRemaining = 1;
+  };
+
+  void MemoryAccess::execute(StageOut** args){
+    assert(canUpdateArgs());
+    //Delete the old arguments
+    delete this->args;
+    //save the ptr to the struct
+    this->args = (EXOut*) *args;
+    //Nullify the ptr for user cause they should never use again
+    *args = NULL;
+    setCyclesRemaining(1);
+    BOOST_LOG_TRIVIAL(debug) << "<<" + getName() + ">> " << "executing args"
+      " with instruction " << this->args->instr.toString() << std::endl;
+  }
+
+  StageOut* MemoryAccess::getOut(){return NULL;};
 
 }
