@@ -6,6 +6,10 @@
 #include "Pipeline.h"
 #include "Mem.h"
 
+using namespace std;
+using namespace instruction;
+using namespace mem;
+
 namespace pipeline{
 
   //Out classes 
@@ -23,9 +27,17 @@ namespace pipeline{
   EXOut::EXOut(instruction::Instruction instr, std::vector<mem::data32> regVals,
       mem::data64 comp) : instr{instr}, regVals{regVals}, comp{comp}{};
   EXOut::EXOut() : instr{instruction::Instruction(0)}, regVals(0), comp{0}{};
+
+  MAOut::MAOut(instruction::Instruction instr, std::vector<mem::data32> regVals,
+    mem::data64 comp, mem::data32 loaded) : instr{instr}, regVals{regVals}, 
+    comp{comp}, loaded{loaded}{};
+  MAOut::MAOut() : instr{instruction::Instruction(0)}, regVals(0), comp{0},
+    loaded{0}{};
+
   bool PipelinePhase::checkInvariants() const{
     return checkCyclesRemaining();
   }
+
 
   void PipelinePhase::setCyclesRemaining(int cycles){
    cyclesRemaining = cycles;
@@ -79,6 +91,7 @@ namespace pipeline{
     PipelinePhase(name),
     mem{ mem }{
     cyclesRemaining = 0;
+    args = NULL;
   }
 
   void InstructionFetch::execute(StageOut** args){
@@ -116,6 +129,7 @@ namespace pipeline{
     rf{rf}
   {
     cyclesRemaining = 1;
+    args=NULL;
   }
 
   mem::data32 InstructionDecode::loadReg(const std::bitset<5>& addr) const{
@@ -175,14 +189,17 @@ namespace pipeline{
 
   Execute::Execute(std::string name) : PipelinePhase(name){
     cyclesRemaining = 1;
+    args = NULL;
   }
 
   void Execute::execute(StageOut** args){
     assert(canUpdateArgs());
     //Delete the old arguments
+    std::cout <<"printing instr " <<  this->args << std::endl;
+    std::cout << "never got here" << std::endl;
     delete this->args;
     //save the ptr to the struct
-    this->args = (IDOut*) *args;
+    this->args = (IDOut*) (*args);
     //Nullify the ptr for user cause they should never use again
     *args = NULL;
     setCyclesRemaining(1);
@@ -286,7 +303,7 @@ namespace pipeline{
         comp = (unsigned short) rs ^ (unsigned short) immediate;
       } else if (instrType == "I-Type:lui"){
         comp = ((unsigned short) immediate) << 16;
-      //lb to lwu do same thing just an add
+        //lb to lwu do same thing just an add
       } else if (instrType == "I-Type:lb"){
         comp = (mem::signedData32) rs + (short)immediate;
       } else if (instrType == "I-Type:lh"){
@@ -322,9 +339,11 @@ namespace pipeline{
     return exOut;
   }
 
-  MemoryAccess::MemoryAccess(std::string name) : PipelinePhase(name){
-    cyclesRemaining = 1;
-  };
+  MemoryAccess::MemoryAccess(std::string name, mem::MemoryUnit* mem) : 
+    PipelinePhase(name), mem{mem}{
+      cyclesRemaining = 1;
+      args = NULL;
+    };
 
   void MemoryAccess::execute(StageOut** args){
     assert(canUpdateArgs());
@@ -339,6 +358,23 @@ namespace pipeline{
       " with instruction " << this->args->instr.toString() << std::endl;
   }
 
-  StageOut* MemoryAccess::getOut(){return NULL;};
+  StageOut* MemoryAccess::getOut(){
+    mem::data32 loaded = 0;
+    std::string instrType = args->instr.getType();
+    if (instrType == "I-Type:sw"){
+      mem::data32 rs = args->regVals[0];
+      mem->sw(args->comp, rs);
+    } else if (instrType == "I-Type:lw"){
+      loaded = mem->ld((mem::data32) args->comp);
+    }
+    MAOut* out = new MAOut(args->instr, args->regVals, args->comp, loaded);
+    return out;
+  }
+
+  WriteBack::WriteBack(string name) : PipelinePhase(name){}
+
+  void WriteBack::execute(StageOut** args){}
+
+  StageOut* WriteBack::getOut(){return NULL;}
 
 }

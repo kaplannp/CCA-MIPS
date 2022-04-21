@@ -10,6 +10,7 @@
 
 #define BOOST_LOG_DYN_LINK
 
+using namespace mem;
 /*
  * The core class of this module is the PipelinePhase. This is a single stage
  * in a pipeline. It must implement the included methods.
@@ -38,23 +39,6 @@ namespace pipeline{
     IFOut(const instruction::Instruction& instr);
     IFOut();
   };
-
-  /*
-   * Ouput of an Execute pipeline phase.
-   * Builds upon the IDOut by adding a comp field for the result of the
-   * computation.
-   */
-  class EXOut : public StageOut {
-    public:
-      const instruction::Instruction instr;
-      const std::vector<mem::data32> regVals;
-      const mem::data64 comp;
-      EXOut(instruction::Instruction instr, std::vector<mem::data32> regVals,
-          mem::data64 comp);
-      EXOut();
-  };
-
-
   /*
    * This represents the output of an Instruction Decode Phase. The first
    * element is the instruction that was being processed. The second element is
@@ -74,6 +58,38 @@ namespace pipeline{
       const std::vector<mem::data32> regVals;
       IDOut(instruction::Instruction instr, std::vector<mem::data32> regVals);
       IDOut();
+  };
+
+  /*
+   * Ouput of an Execute pipeline phase.
+   * Builds upon the IDOut by adding a comp field for the result of the
+   * computation.
+   */
+  class EXOut : public StageOut {
+    public:
+      const instruction::Instruction instr;
+      const std::vector<mem::data32> regVals;
+      const mem::data64 comp;
+      EXOut(instruction::Instruction instr, std::vector<mem::data32> regVals,
+          mem::data64 comp);
+      EXOut();
+  };
+
+
+  /*
+   * Class to represent the output of a memory unit
+   * This is copy and past nightmare. Exactly the smae out as a EX, but
+   * sacrificing design at this point for development time
+   */
+  class MAOut : public StageOut {
+    public:
+      const instruction::Instruction instr;
+      const std::vector<mem::data32> regVals;
+      const mem::data64 comp;
+      const mem::data32 loaded;
+      MAOut(instruction::Instruction instr, std::vector<mem::data32> regVals,
+          mem::data64 comp, mem::data32 loaded);
+      MAOut();
   };
 
 
@@ -128,13 +144,13 @@ namespace pipeline{
       /*
        * return string: the name of this PipelinePhase
        */
-      std::string getName() const;
+      virtual std::string getName() const;
 
       /*
        * return bool: True if this pipeline is processing it's current
        *   instruction
        */
-      bool isBusy() const;
+      virtual bool isBusy() const;
 
       /*
        * This function is used to update the current cycle. This probably
@@ -144,7 +160,7 @@ namespace pipeline{
        * Preconditions:
        *   cycle should never run below 0
        */
-      void updateCycle(int cycleChange);
+      virtual void updateCycle(int cycleChange);
 
       /*
        * This function does two things.
@@ -258,10 +274,6 @@ namespace pipeline{
   class Execute: public PipelinePhase {
     private:
       IDOut* args;
-      //TODO would be nice to have a hashtable of string mnemonic to function
-      //like this 
-      //typedef int (*IntFunctionWithOneParameter) (int a);
-      //but looks complicated
 
     public:
       Execute(std::string name);
@@ -297,10 +309,14 @@ namespace pipeline{
    */
   class MemoryAccess: public PipelinePhase {
     private:
+      MemoryUnit* mem;
       EXOut* args;
 
     public:
-      MemoryAccess(std::string name);
+      /*
+       * Note, this class will modify the mem you give it
+       */
+      MemoryAccess(std::string name, MemoryUnit* mem);
 
       /*
        * This function does two things.
@@ -322,6 +338,36 @@ namespace pipeline{
        *     R-Type: size 3, {rs, rt, rd}
        *     I-Type: size 2, {rs, rt/rd}
        *     J-Type: size 0
+       */
+      StageOut* getOut();
+  };
+
+  /*
+   * WriteBack stage to simulate the final stage of 5 stage pipe
+   */
+  class WriteBack : public PipelinePhase {
+    private:
+      MAOut* args;
+      mem::data64 acc;
+
+    public:
+      WriteBack(std::string name);
+
+      /*
+       * This function does two things.
+       * 1. It stores the arguments needed for this instruction
+       * 2. It updates the cyclesRemaining
+       * params: 
+       *   args: of type EXOut
+       * returns:
+       *   the instruction that was being worked on
+       */
+      void execute(StageOut** args);
+
+      /*
+       * does necessary computation for whichever arguments are currently
+       * stored.
+       * returns:
        */
       StageOut* getOut();
   };

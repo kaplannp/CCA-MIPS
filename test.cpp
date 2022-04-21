@@ -12,6 +12,10 @@
 #include <string>
 #include <math.h>
 
+using namespace mem;
+using namespace pipeline;
+using namespace std;
+using namespace instruction;
 // this runs it 'g++ test.cpp  -lboost_unit_test_framework'
 
 BOOST_AUTO_TEST_SUITE( TestInstruction )
@@ -56,14 +60,19 @@ BOOST_AUTO_TEST_SUITE( TestMemory )
     m1->sw(999, 23); // edge of mem
     BOOST_CHECK_EQUAL(m1->ld(999), 23);
 
-    mem::data32 mo2[] = {4,5,2,4,50,29};
     size_t s2 = 6;
+    mem::data32* mo2 = new mem::data32[s2];
+    mo2[0] = 4;
+    mo2[1] = 5;
+    mo2[2] = 2;
+    mo2[3] = 4;
+    mo2[4] = 50;
+    mo2[5] = 29;
     mem::MemoryUnit* m2 = new mem::DRAM(s2, mo2, "m2");
     for(int i = 0; i < s2; i++)
       BOOST_CHECK_EQUAL(m2->ld(i), mo2[i]);
-    //LEAKS! these move stuff from indirectly lost to directly
-    //delete m1;
-    //delete m2;
+    delete m1;
+    delete m2;
   }
 
 BOOST_AUTO_TEST_SUITE_END()
@@ -85,19 +94,14 @@ BOOST_AUTO_TEST_SUITE( TestPipelinePhases )
     BOOST_CHECK(p->isBusy());
     p->updateCycle(1);
     BOOST_CHECK( !(p->isBusy()) );
-    // TODO catching exceptions with boost
-    //BOOST_CHECK_THROW(p->updateCycle(1),std::exception);
     
     //Now, see if you can get the instructions right
     // expected instructions to be fetched
-    //TODO how's that for memory mamnagement?
     instruction::Instruction instr1 = instruction::Instruction(5);
     instruction::Instruction instr2 = instruction::Instruction(10);
     pipeline::IFOut o1 = {instr1};
     pipeline::IFOut o2 = {instr2};
     pipeline::IFOut* trueOut = (pipeline::IFOut*) (p->getOut());
-    //TODO in a better world, I would not specify getInstr because c++ would
-    //call the operator I carefully designed. Alas
     BOOST_CHECK_EQUAL(trueOut->instr.getInstr(), o1.instr.getInstr());
     pipeline::StageOut* op2 = new pipeline::PCOut(5); //addr 5
     delete trueOut;
@@ -107,6 +111,7 @@ BOOST_AUTO_TEST_SUITE( TestPipelinePhases )
     BOOST_CHECK_EQUAL(trueOut->instr.getInstr(), o2.instr.getInstr());
     delete trueOut;
     delete p;
+    delete m1;
   }
 
   BOOST_AUTO_TEST_CASE( TestID ){
@@ -176,6 +181,7 @@ BOOST_AUTO_TEST_SUITE( TestPipelinePhases )
     BOOST_CHECK(idOut3->regVals.empty());
     delete idOut3;
     delete id;
+    delete rf1;
   }
 
   bool testIInstr(pipeline::PipelinePhase* ex, mem::data32 opcode, 
@@ -373,13 +379,87 @@ BOOST_AUTO_TEST_SUITE( TestPipelinePhases )
     BOOST_CHECK(testIInstr(ex,0x2,0,0,40,0)); 
     BOOST_CHECK(testIInstr(ex,0x3,0,0,0,0)); 
     //LEAKS! why do I even need this?
+    //Objects get destructed when they go out of scope, but default destructor
+    //of pointer is let it go away. Need delete to destruct object pointed to
+    //use concrete types. No new.
     delete ex;
   }
 
-  BOOST_AUTO_TEST_CASE( TestMemoryAccess ){
-    pipeline::PipelinePhase* ma = new pipeline::MemoryAccess("MA");
+  /*
+   * Tests a memory load 
+   */
+  bool maTestLoad(MemoryUnit* mem, PipelinePhase* ma, data64 comp,
+      data32 rs){
+    //Note, RS, RD/RT have been read by now, and val was used during the execute
+    //stage, so is not necessary here
+    //for here
+    data32 expected = mem->ld((data32) comp);
+    unsigned int instrVal = constructIInstr(0x23, 1, 2, 3);
+    Instruction instr = Instruction(instrVal);
+    vector<mem::data32> regVals = {rs, 0};
+    StageOut* exOut = new EXOut(instr, regVals, comp);
+    ma->execute(&exOut);
     ma->updateCycle(1);
-
+    pipeline::MAOut* maOut = (MAOut*) ma->getOut();
+    bool result =  maOut->loaded == expected;
+    if(!result){
+      std::cout << "expected " << expected << ", but got " << maOut->comp 
+        << std::endl;
+    }
+    delete exOut;
+    return result;
   }
+
+  /*
+   * Tests a Memory store
+   */
+  bool maTestStore(MemoryUnit* mem, PipelinePhase* ma, data64 comp,
+      data32 rs){
+    //Note, RS, RD/RT have been read by now, and val was used during the execute
+    //stage, so is not necessary here
+    //for here
+    data32 expected = mem->ld((data32) comp);
+    unsigned int instrVal = constructIInstr(0x2b, 1, 2, 3);
+    Instruction instr = Instruction(instrVal);
+    vector<mem::data32> regVals = {rs, 0};
+    StageOut* exOut = new EXOut(instr, regVals, comp);
+    ma->execute(&exOut);
+    ma->updateCycle(1);
+    pipeline::MAOut* maOut = (MAOut*) ma->getOut();
+    data32 mVal = mem->ld((data32) comp);
+    bool result =  rs == mVal;
+    if(!result){
+      std::cout << "expected " << rs << ", but got " << mVal << std::endl;
+    }
+    delete exOut;
+    return result;
+  }
+
+  BOOST_AUTO_TEST_CASE( TestMemoryAccess ){
+    size_t s1 = 10;
+    MemoryUnit* m1 = new DRAM(s1, "MainMem1");
+    PipelinePhase* ma = new MemoryAccess("MA", m1);
+    ma->updateCycle(1);
+    //check loads
+    m1->sw(5, 3141);
+    BOOST_CHECK(maTestLoad(m1,ma,5,0));
+    m1->sw(5, 0);
+    BOOST_CHECK(maTestLoad(m1,ma,5,0));
+    m1->sw(0, 42);
+    BOOST_CHECK(maTestLoad(m1,ma,0,0));
+    //check stores
+    BOOST_CHECK(maTestStore(m1,ma,4, 9));
+    BOOST_CHECK(maTestStore(m1,ma,5, 0));
+    BOOST_CHECK(maTestStore(m1,ma,0, 9));
+  }
+
+  //BOOST_AUTO_TEST_CASE( TestWriteBack ){
+  //  PipelinePhase* wb = new WriteBack("WB");
+  //  wb->updateCycle(1);
+  //  data8 rd = 4;
+  //  unsigned int instrVal = constructRInstr(1/*rs*/,2/*rt*/,rd,4/*shamt*/,func)
+  //  Instruction instr = new Instruction(instrVal);
+  //  StageOut* exOut = new EXOut(instr, 
+  //}
 
 BOOST_AUTO_TEST_SUITE_END()

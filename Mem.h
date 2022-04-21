@@ -8,6 +8,10 @@
  */
 namespace mem{
 
+  typedef unsigned char data8;
+  typedef char signedData8;
+  typedef unsigned short data16;
+  typedef short signedData16;
   typedef unsigned int data32;
   typedef long data64; 
   typedef int signedData32; //not used for storage, but can be used for cast
@@ -42,6 +46,8 @@ namespace mem{
       virtual void sw(unsigned int addr, data32 word) = 0;
 
       const std::string& getName();
+
+      virtual ~MemoryUnit() = default;
 
   };
 
