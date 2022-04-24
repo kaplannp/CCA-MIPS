@@ -178,6 +178,8 @@ namespace pipeline{
       virtual void execute(StageOut** args) = 0;
 
       virtual StageOut* getOut() = 0;
+
+      virtual ~PipelinePhase() = default;
   };
 
   /*
@@ -217,6 +219,7 @@ namespace pipeline{
 
       StageOut* getOut();
 
+      virtual ~InstructionFetch();
   };
 
 
@@ -265,6 +268,7 @@ namespace pipeline{
        */
       StageOut* getOut();
 
+      virtual ~InstructionDecode();
   };
   
   /*
@@ -300,6 +304,8 @@ namespace pipeline{
        *     J-Type: size 0
        */
       StageOut* getOut();
+
+      virtual ~Execute();
   };
 
   /*
@@ -340,6 +346,8 @@ namespace pipeline{
        *     J-Type: size 0
        */
       StageOut* getOut();
+
+      virtual ~MemoryAccess();
   };
 
   /*
@@ -348,10 +356,11 @@ namespace pipeline{
   class WriteBack : public PipelinePhase {
     private:
       MAOut* args;
-      mem::data64 acc;
+      mem::data64* acc;
+      MemoryUnit* rf; // the registerfile
 
     public:
-      WriteBack(std::string name);
+      WriteBack(std::string name, MemoryUnit* rf, data64* acc);
 
       /*
        * This function does two things.
@@ -370,6 +379,8 @@ namespace pipeline{
        * returns:
        */
       StageOut* getOut();
+
+      virtual ~WriteBack();
   };
 
 }

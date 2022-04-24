@@ -378,7 +378,6 @@ BOOST_AUTO_TEST_SUITE( TestPipelinePhases )
     //j/jal (always return 0. nothing to do for ALU)
     BOOST_CHECK(testIInstr(ex,0x2,0,0,40,0)); 
     BOOST_CHECK(testIInstr(ex,0x3,0,0,0,0)); 
-    //LEAKS! why do I even need this?
     //Objects get destructed when they go out of scope, but default destructor
     //of pointer is let it go away. Need delete to destruct object pointed to
     //use concrete types. No new.
@@ -453,13 +452,109 @@ BOOST_AUTO_TEST_SUITE( TestPipelinePhases )
     BOOST_CHECK(maTestStore(m1,ma,0, 9));
   }
 
-  //BOOST_AUTO_TEST_CASE( TestWriteBack ){
-  //  PipelinePhase* wb = new WriteBack("WB");
-  //  wb->updateCycle(1);
-  //  data8 rd = 4;
-  //  unsigned int instrVal = constructRInstr(1/*rs*/,2/*rt*/,rd,4/*shamt*/,func)
-  //  Instruction instr = new Instruction(instrVal);
-  //  StageOut* exOut = new EXOut(instr, 
-  //}
+  /*
+   * Note rd should be passed by address not value
+   */
+  void execRInstrWB(PipelinePhase* wb, 
+      data8 rd, data64 comp, data8 func){
+    unsigned int instrVal = constructRInstr(1/*rs*/,2/*rt*/,rd,4/*shamt*/,func);
+    Instruction instr = Instruction(instrVal);
+    StageOut* maOut = new EXOut(instr, {1,2,3}, comp);
+    wb->execute(&maOut);
+    wb->updateCycle(1);
+    StageOut* WBOut = wb->getOut();
+  }
+
+  bool testSimpleRInstrWB(PipelinePhase* wb, MemoryUnit* rf, 
+      data8 rd, data64 comp, data8 func){
+
+    execRInstrWB(wb,rd,comp,func);
+    data32 rdData = rf->ld(rd);
+    bool result = rdData == comp;
+    if(!result){
+      cout << "COMPARISON FAILED " << rdData << " not expected " << comp <<
+        endl;
+    }
+    return result;
+  }
+
+  bool testAccRInstrWB(PipelinePhase* wb, data64* acc,
+      data64 comp, data8 func){
+
+    execRInstrWB(wb,1,comp,func);
+    bool result = *acc == comp;
+    if(!result){
+      cout << "COMPARISON FAILED " << *acc << " not expected " << comp <<
+        endl;
+    }
+    return result;
+  }
+
+  bool testSlt(PipelinePhase* wb, MemoryUnit* rf, 
+      data8 rd, data64 comp, data8 func){
+
+    execRInstrWB(wb,rd,comp,func);
+    bool result = ((bool) comp) == ((bool) rf->ld(rd));
+    if(!result){
+      cout << "COMPARISON FAILED " << endl;
+    }
+    return result;
+  }
+
+  bool testAccMf(PipelinePhase* wb, MemoryUnit* rf,
+      data8 rd, data64* acc, data8 func, data32 expected){
+    
+    execRInstrWB(wb,rd,42,func);
+    data32 rdData = rf->ld(rd);
+    bool result = rdData == expected;
+    if(!result){
+      cout << "COMPARISON FAILED " << rdData << " != expected " << expected <<
+        "Impropper sluffing" << endl;
+    }
+    return result;
+  }
+
+  BOOST_AUTO_TEST_CASE( TestWriteBack ){
+    MemoryUnit* rf = new DRAM(10, "RegFile");
+    for(int i = 0; i < rf->getSize(); i++)
+      rf->sw(i, i);
+    data64* acc = new data64(0);
+    PipelinePhase* wb = new WriteBack("WB", rf, acc);
+      wb->updateCycle(1);
+    //Test some simple instructions
+    BOOST_CHECK(testSimpleRInstrWB(wb, rf, 4/*rd*/, 1/*comp*/,0x22/*func*/));//sub
+    BOOST_CHECK(testSimpleRInstrWB(wb, rf, 2/*rd*/, 50/*comp*/,0x0/*func*/));//sll
+    BOOST_CHECK(testSimpleRInstrWB(wb, rf, 4/*rd*/, 0/*comp*/,0x20/*func*/));//add
+
+    //Test some Acc accessing instructions
+    BOOST_CHECK(testAccRInstrWB(wb,acc,100,0x18));
+    BOOST_CHECK(testAccRInstrWB(wb,acc,30,0x1b));
+    BOOST_CHECK(testAccRInstrWB(wb,acc,4,0x1a));
+
+    //Test slt R instrs
+    BOOST_CHECK(testSlt(wb,rf,3,0,0x2a));
+    BOOST_CHECK(testSlt(wb,rf,5,1,0x2a));
+    BOOST_CHECK(testSlt(wb,rf,0,1,0x2b));
+    
+    //Test mfhi, mflo
+    //mfhi
+    *acc = 2l<<32;
+    BOOST_CHECK(testAccMf(wb,rf,9,acc,0x10, 2));
+    *acc = 0;
+    BOOST_CHECK(testAccMf(wb,rf,3,acc,0x10, 0));
+    *acc = 89;
+    BOOST_CHECK(testAccMf(wb,rf,8,acc,0x10, 0));
+    //mflo
+    *acc = 53l<<32;
+    BOOST_CHECK(testAccMf(wb,rf,2,acc,0x12, 0));
+    *acc = 0;
+    BOOST_CHECK(testAccMf(wb,rf,5,acc,0x12, 0));
+    *acc = 67;
+    BOOST_CHECK(testAccMf(wb,rf,9,acc,0x12, 67));
+
+    delete wb;
+    delete rf;
+    delete acc;
+  }
 
 BOOST_AUTO_TEST_SUITE_END()

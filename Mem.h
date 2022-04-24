@@ -49,6 +49,8 @@ namespace mem{
 
       virtual ~MemoryUnit() = default;
 
+      virtual size_t getSize() = 0;
+
   };
 
   class DRAM: public MemoryUnit{

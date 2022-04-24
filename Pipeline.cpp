@@ -124,6 +124,10 @@ namespace pipeline{
     return out;
   }
 
+  InstructionFetch::~InstructionFetch(){
+    delete args;
+  }
+
   InstructionDecode::InstructionDecode(std::string name, mem::MemoryUnit& rf) :
     PipelinePhase(name),
     rf{rf}
@@ -185,6 +189,10 @@ namespace pipeline{
     }
     IDOut* out = new IDOut(args->instr, regVals);
     return out;
+  }
+
+  InstructionDecode::~InstructionDecode(){
+    delete args;
   }
 
   Execute::Execute(std::string name) : PipelinePhase(name){
@@ -339,11 +347,15 @@ namespace pipeline{
     return exOut;
   }
 
+  Execute::~Execute(){
+    delete args;
+  }
+
   MemoryAccess::MemoryAccess(std::string name, mem::MemoryUnit* mem) : 
     PipelinePhase(name), mem{mem}{
       cyclesRemaining = 1;
       args = NULL;
-    };
+    }
 
   void MemoryAccess::execute(StageOut** args){
     assert(canUpdateArgs());
@@ -371,10 +383,92 @@ namespace pipeline{
     return out;
   }
 
-  WriteBack::WriteBack(string name) : PipelinePhase(name){}
+  MemoryAccess::~MemoryAccess(){
+    delete args;
+  }
 
-  void WriteBack::execute(StageOut** args){}
+  WriteBack::WriteBack(string name, MemoryUnit* rf, data64* acc) : 
+    PipelinePhase(name), rf(rf), acc{acc}
+  {
+      cyclesRemaining = 1;
+      args = NULL;
+  }
 
-  StageOut* WriteBack::getOut(){return NULL;}
+  void WriteBack::execute(StageOut** args){
+    assert(canUpdateArgs());
+    //Delete the old arguments
+    delete this->args;
+    //save the ptr to the struct
+    this->args = (MAOut*) *args;
+    //Nullify the ptr for user cause they should never use again
+    *args = NULL;
+    setCyclesRemaining(1);
+    BOOST_LOG_TRIVIAL(debug) << "<<" + getName() + ">> " << "executing args"
+      " with instruction " << this->args->instr.toString() << std::endl;
+
+  }
+
+  //TODO this is terribly named, you don't really want to get out here.
+  //There is no out
+  StageOut* WriteBack::getOut(){
+    static vector<string> simpleRInstrs = {
+      "sub", "subu", "addu", "add", "sll", "sllv", "srl", "srlv", "and", "or",
+      "xor", "nor"
+    };
+    string instrType = args->instr.getType();
+    if(instrType == "R-Type"){
+      //Is R-Type
+      //initialize some helpful vars for the func type
+      string func = args->instr.getFuncType();
+      data32 comp = args->comp;
+      data32 rdAddr = args->instr.getSlice<11,16>().to_ulong();
+
+      //check if instruction is simple
+      bool isSimple = false;
+      for(string s : simpleRInstrs){
+        if(func == s){
+          isSimple = true;
+          break;
+        }
+      }
+
+      if(isSimple){
+        rf->sw(rdAddr, comp);
+      } else if(func == "jr"){ 
+        
+      } else if(func == "slt"){ //comparison
+        data32 res = ((bool) comp) ? 1 : 0;
+        rf->sw(rdAddr, res);
+      } else if(func == "sltu"){ 
+        data32 res = ((bool) comp) ? 1 : 0;
+        rf->sw(rdAddr, res);
+      } else if(func == "mult"){ 
+        *acc = comp;
+      } else if(func == "multu"){ 
+        *acc = comp;
+      } else if(func == "div"){ 
+        *acc = comp;
+      } else if(func == "divu"){ 
+        *acc = comp;
+      } else if(func == "mfhi"){ 
+        rf->sw(rdAddr, *acc >> 32); //sluff off the upper stuff
+      } else if(func == "mflo"){ 
+        rf->sw(rdAddr, (data32) *acc); //truncate the higher order things
+      }
+      else {
+        //Couldn't find the function specified, so unimplemented, so dying
+        BOOST_LOG_TRIVIAL(fatal) << "<<" + getName() + ">> encountered"
+          " unimplemented function type for R-Type instruction, " + func << "." 
+          << std::endl;
+        //TODO come up with a nicer exception
+        throw std::exception();
+      }
+    }
+    return NULL;
+  }
+
+  WriteBack::~WriteBack(){
+    delete args;
+  }
 
 }

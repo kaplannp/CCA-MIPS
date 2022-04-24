@@ -30,6 +30,8 @@ namespace instruction{
         {0x19,"multu"},
         {0x1a,"div"},
         {0x1b,"divu"},
+        {0x10,"mfhi"},
+        {0x12,"mflo"}
         });
 
   typedef std::bitset<32> InstrBits;
