@@ -1,8 +1,10 @@
 #ifndef MEM_INCLUDED
 #define MEM_INCLUDED
+#include <unordered_map>
 #include <boost/log/trivial.hpp>
 #define BOOST_LOG_DYN_LINK
 
+using namespace std;
 /*
  * This module includes code of memory
  */
@@ -27,6 +29,7 @@ namespace mem{
 
     protected:
       MemoryUnit(std::string name);
+      MemoryUnit();
 
     public:
       /*
@@ -44,6 +47,11 @@ namespace mem{
        *   word: the word to store
        */
       virtual void sw(unsigned int addr, data32 word) = 0;
+
+      /*
+       * used to load a block of words. Useful for initialization
+       */
+      virtual void loadBlock(data32 addr, data32* words, size_t size) = 0;
 
       const std::string& getName();
 
@@ -70,7 +78,7 @@ namespace mem{
        *   size: the size of the memory in words
        *   name: a name to keep track of this object
        */
-      DRAM(size_t size, std::string name);
+       DRAM(size_t size, std::string name);
 
       /*
        * Initizlize memory unit with a given array. Will copy array into
@@ -80,7 +88,7 @@ namespace mem{
        *   mem: a pointer to an array of size, size 
        *   name: a name to keep track of this object
        */
-      DRAM(size_t size, data32* mem, std::string name);
+       DRAM(size_t size, data32* mem, std::string name);
     
       /*
        * loads the requested word
@@ -99,18 +107,77 @@ namespace mem{
      * throws: exception if address is invalid
      */
     void sw(unsigned int addr, data32 word);
+    
+    /*
+     * Used to load a block of words. Useful for initialization
+     * @param addr: the address in the mem to start writing words
+     * @param words: an array of words to write 
+     * @param size: the number of words to write
+     */
+    void loadBlock(data32 addr, data32* words, size_t size);
 
     size_t getSize();
 
     /*
      * destructor will deallocate mem array
      */
-    ~DRAM();
+    virtual ~DRAM();
 
     //TODO implement the shallow copy
 
   };
 
+  /*
+   * This class imitates some of the nice things about true virtual memory
+   * by a hashtable on the frontend of address lookups. In this way, you
+   * can have a much smaller physical memory than virtual memory, which is 
+   * what is required for running a simulation without using copious amounts
+   * of memory. This is NOT true virtual memory. This project does not implement
+   * an os. There will be no OSing.
+   *
+   * The class wraps another MemoryUnit object
+   *
+   * If you ever try to use more memory than the given MemoryUnit object has,
+   * this class will try to access out of bounds memory of that object, and the
+   * composed MemoryUnit must deal with the consequences of that
+   */
+  class VirtualMem : public MemoryUnit{
+    private:
+      unordered_map<data32, data32> addrLookup;
+      MemoryUnit* mem;
+      int count;
+      data32 lookup(data32);
+
+    public:
+      VirtualMem(MemoryUnit* mem);
+      /*
+       * loads a word from address location specified by addr
+       * params: 
+       *   addr: the address
+       * returns: the word
+       */
+      data32 ld(unsigned int addr);
+
+      /*
+       * stores word at loaction specified by address
+       * params:
+       *   addr: the address
+       *   word: the word to store
+       */
+      void sw(unsigned int addr, data32 word);
+
+      /*
+       * used to load a block of words. Useful for initialization
+       */
+      void loadBlock(data32 addr, data32* words, size_t size);
+
+      const std::string& getName();
+
+      ~VirtualMem();
+
+      size_t getSize();
+    
+  };
 }
 
 #endif

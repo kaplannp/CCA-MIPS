@@ -1,5 +1,13 @@
-#include<iostream>
-#include<bitset>
+#include <iostream>
+#include <bitset>
+#define BOOST_LOG_DYN_LINK
+#include <boost/log/attributes.hpp>
+#include <boost/log/common.hpp>
+#include <boost/log/core.hpp>
+#include <boost/log/exceptions.hpp>
+#include <boost/log/expressions.hpp>
+#include <boost/log/sinks.hpp>
+#include <boost/log/trivial.hpp>
 
 /*
  * takes in the values of each subset of an R instruction, and returns the 
@@ -32,8 +40,9 @@ unsigned int constructIInstr(unsigned int opcode, unsigned char rs,
 }
 
 /*
- * takes in the values of each subset of an I instruction, and returns the 
- * integer value of the instruction
+ * takes in the values of each subset of an J instruction, and returns the 
+ * integer value of the instruction.
+ * Really don't use a value outside permisible range of 28 bytes
  */
 unsigned int constructJInstr(unsigned int opcode, unsigned int val){
   unsigned int instr = 0;
@@ -45,7 +54,8 @@ unsigned int constructJInstr(unsigned int opcode, unsigned int val){
 //TODO I can't use severity?
 //https://www.boost.org/doc/libs/1_79_0/libs/log/doc/html/log/tutorial/sinks.html
 //void initLog(){
-//  boost::log::add_file_log("out.log");
+//  //either missing header or dynamic invocation removes it
+//  //boost::log::add_file_log("out.log");
 //  
 //  //filter the log
 //  boost::log::core::get()->set_filter

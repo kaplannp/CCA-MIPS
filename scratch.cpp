@@ -4,6 +4,6 @@
 using namespace std;
 
 int main(){
-  int* n = NULL;
-  delete n;
+  int x = -32;
+  cout << (x >> 31) << endl;
 }

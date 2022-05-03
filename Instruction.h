@@ -4,6 +4,15 @@
 #include<bitset>
 #include<unordered_map>
 #include "Mem.h"
+//#define BOOST_LOG_DYN_LINK
+//#include <boost/log/trivial.hpp>
+//#include <boost/log/attributes.hpp>
+//#include <boost/log/common.hpp>
+//#include <boost/log/core.hpp>
+//#include <boost/log/exceptions.hpp>
+//#include <boost/log/expressions.hpp>
+//#include <boost/log/sinks.hpp>
+//#include <boost/log/trivial.hpp>
 
 namespace instruction{
 
@@ -31,7 +40,14 @@ namespace instruction{
         {0x1a,"div"},
         {0x1b,"divu"},
         {0x10,"mfhi"},
-        {0x12,"mflo"}
+        {0x12,"mflo"},
+        {0x3,"sra"},
+        {0x7,"srav"},
+        {0xc,"syscall"},
+        {0x11,"move"},
+        {0x9,"jalr"},
+        //completely unimplemented
+        {0x1,"movef"}
         });
 
   typedef std::bitset<32> InstrBits;

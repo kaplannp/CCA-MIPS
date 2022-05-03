@@ -1,5 +1,7 @@
+#define BOOST_LOG_DYN_LINK
+#include <boost/log/trivial.hpp>
 #include "Instruction.h"
-#include<iostream>
+using namespace std; 
 
 namespace instruction{
  
@@ -13,13 +15,30 @@ namespace instruction{
   std::string Instruction::getType() const{
     //TODO destroy here?
     const std::bitset<6> opcode = getSlice<26,32>();
-    return Instruction::OPCODE2STR.at(opcode);
+    try{
+      return Instruction::OPCODE2STR.at(opcode);
+    } catch (exception& e){
+      BOOST_LOG_TRIVIAL(fatal) << "error " << e.what() << endl;
+      BOOST_LOG_TRIVIAL(fatal) << "invalid opcode " << hex << opcode.to_ulong()
+        << endl;
+      throw e;
+    }
+    //should never get here 
   }
+
   
   std::string Instruction::getFuncType() const{
     std::bitset<6> funcBits = getSlice<0,6>();
-    std::string func = FUNC_2_MNEMONIC.at((unsigned int) funcBits.to_ulong());
-    return func;
+    try{
+      std::string func = FUNC_2_MNEMONIC.at((unsigned int) funcBits.to_ulong());
+      return func;
+    } catch (exception& e){
+      BOOST_LOG_TRIVIAL(fatal) << "error " << e.what() << endl;
+      BOOST_LOG_TRIVIAL(fatal) << "invalid function code for r instruction, "
+        << "0x" << hex << funcBits.to_ulong() << endl;
+      throw e;
+    }
+    //You should never reach here
   }
 
   std::string Instruction::toString() const{
@@ -45,7 +64,16 @@ namespace instruction{
         {std::bitset<6>(0xe), "I-Type:xori"},
         {std::bitset<6>(0xf), "I-Type:lui"},
         {std::bitset<6>(0x23), "I-Type:lw"},
-        {std::bitset<6>(0x2b), "I-Type:sw"}
+        {std::bitset<6>(0x2b), "I-Type:sw"},
+        {bitset<6>(0x1), "I-Type:bltz"},
+        //Note following instructions go to different sizes, but I treat them
+        //as load word so you can run straight assmebly from gcc Xcompiler
+        {bitset<6>(0x20), "I-Type:lw"},
+        {bitset<6>(0x21), "I-Type:lw"},
+        {bitset<6>(0x24), "I-Type:lw"},
+        {bitset<6>(0x25), "I-Type:lw"},
+        {bitset<6>(0x28), "I-Type:sw"},
+        {bitset<6>(0x29), "I-Type:sw"}
       }
    );
 

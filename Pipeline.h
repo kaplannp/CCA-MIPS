@@ -4,6 +4,8 @@
 #include <assert.h>
 #include <boost/log/trivial.hpp>
 #include <vector>
+#include <string>
+#include <fstream>
 
 #include "Mem.h"
 #include "Instruction.h"
@@ -11,6 +13,8 @@
 #define BOOST_LOG_DYN_LINK
 
 using namespace mem;
+using namespace instruction;
+using namespace std;
 /*
  * The core class of this module is the PipelinePhase. This is a single stage
  * in a pipeline. It must implement the included methods.
@@ -36,7 +40,7 @@ namespace pipeline{
   class IFOut : public StageOut { 
     public:
     const instruction::Instruction instr;
-    IFOut(const instruction::Instruction& instr);
+    IFOut(const instruction::Instruction instr);
     IFOut();
   };
   /*
@@ -92,6 +96,47 @@ namespace pipeline{
       MAOut();
   };
 
+  class WBOut : public StageOut {
+    public:
+      const bool quit;
+      WBOut(bool quit);
+      WBOut();
+  };
+
+  class PC {
+    private:
+      data32 index;
+      string name;
+      void logCurrentIndex();
+
+    protected:
+      string getName();
+    public:
+      PC(string name, data32 startIndex);
+
+      /*
+       * @returns struct with address at the current index
+       * NOTE does not add to the index
+       */
+      StageOut* getOut() const;
+      
+      /*
+       * sets the program counter to a new index
+       * @param the index to set the program counter to
+       */
+      void set(data32 index);
+
+      /*
+       * sets the lower n bits to the passed value
+       */
+      void setLowBits(data32 index, unsigned char nBits);
+
+      /*
+       * increments the program counter by the given increment (in words)
+       * @param the amount to increment
+       */
+      void inc(data32 increment);
+  };
 
   /*
    * This is the core abstract class for a pipeline phase
@@ -111,11 +156,15 @@ namespace pipeline{
        */
       bool checkCyclesRemaining() const;
 
+      long nCyclesPassed;
+
     protected:
       /* name of this PipelinePhase */
       const std::string name;
       /* The number of cycles left before freed */
       int cyclesRemaining; 
+      /*A logger to write the current update stage*/
+      ofstream& log;
 
       /*
        * immediately set the number of remaining cycles to the current cycle
@@ -130,7 +179,7 @@ namespace pipeline{
        * Initializes name to name. 
        * one clock cycle
        */
-      PipelinePhase(std::string name);
+      PipelinePhase(std::string name, ofstream& log);
 
       /*
        * This is useful for code reuse. Most (all?) children will use this
@@ -204,7 +253,7 @@ namespace pipeline{
        *   name: the name of this InstructionFetch
        *   mem: the memory unit that this instruction fetch has access to
        */
-      InstructionFetch(std::string name, mem::MemoryUnit& mem);
+      InstructionFetch(std::string name, mem::MemoryUnit& mem, ofstream& log);
 
       /*
        * This function does two things.
@@ -243,7 +292,7 @@ namespace pipeline{
     
     public:
 
-      InstructionDecode(std::string name, mem::MemoryUnit& rf);
+      InstructionDecode(std::string name, mem::MemoryUnit& rf, ofstream& log);
 
       /*
        * This function does two things.
@@ -278,9 +327,11 @@ namespace pipeline{
   class Execute: public PipelinePhase {
     private:
       IDOut* args;
+      PC& pc; //TODO I was able to pass in an entire PC object, and assign
+      //by initialization to this reference. How?
 
     public:
-      Execute(std::string name);
+      Execute(std::string name, PC& pc, ofstream& log);
 
       /*
        * This function does two things.
@@ -315,14 +366,14 @@ namespace pipeline{
    */
   class MemoryAccess: public PipelinePhase {
     private:
-      MemoryUnit* mem;
+      MemoryUnit& mem;
       EXOut* args;
 
     public:
       /*
        * Note, this class will modify the mem you give it
        */
-      MemoryAccess(std::string name, MemoryUnit* mem);
+      MemoryAccess(std::string name, MemoryUnit& mem, ofstream& log);
 
       /*
        * This function does two things.
@@ -356,11 +407,13 @@ namespace pipeline{
   class WriteBack : public PipelinePhase {
     private:
       MAOut* args;
-      mem::data64* acc;
-      MemoryUnit* rf; // the registerfile
+      mem::data64& acc;
+      MemoryUnit& rf; // the registerfile
+      PC& pc;
 
     public:
-      WriteBack(std::string name, MemoryUnit* rf, data64* acc);
+      WriteBack(std::string name, MemoryUnit& rf, data64& acc, PC& pc,
+          ofstream& log);
 
       /*
        * This function does two things.
