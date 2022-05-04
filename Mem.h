@@ -51,7 +51,7 @@ namespace mem{
       /*
        * used to load a block of words. Useful for initialization
        */
-      virtual void loadBlock(data32 addr, data32* words, size_t size) = 0;
+      virtual void storeBlock(data32 addr, data32* words, size_t size) = 0;
 
       const std::string& getName();
 
@@ -114,7 +114,7 @@ namespace mem{
      * @param words: an array of words to write 
      * @param size: the number of words to write
      */
-    void loadBlock(data32 addr, data32* words, size_t size);
+    void storeBlock(data32 addr, data32* words, size_t size);
 
     size_t getSize();
 
@@ -169,7 +169,7 @@ namespace mem{
       /*
        * used to load a block of words. Useful for initialization
        */
-      void loadBlock(data32 addr, data32* words, size_t size);
+      void storeBlock(data32 addr, data32* words, size_t size);
 
       const std::string& getName();
 

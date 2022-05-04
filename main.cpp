@@ -7,10 +7,8 @@ using namespace pipeline;
 using namespace mem;
 
 int main(){
-  ProgramLoader loader = ProgramLoader(
-      new VirtualMem(new DRAM(0x100, "MainMem")),
-      new DRAM(0b100000, "rf")
-      );
+  ProgramLoader loader( new VirtualMem(new DRAM(0x100, "MainMem")),
+      new DRAM(0b100000, "rf"));
   loader.loadProgram("out");
   loader.run();
 }

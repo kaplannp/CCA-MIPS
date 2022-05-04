@@ -27,21 +27,16 @@ namespace pipeline{
    */
   class StageOut{
     public:
-      StageOut(){};
-  };
-
-  class PCOut: public StageOut {
-    public:
-      PCOut(unsigned int addr);
-      PCOut();
-      const unsigned int addr;
+      StageOut(data32 addr);
+      StageOut();
+      const data32 addr;
   };
 
   class IFOut : public StageOut { 
     public:
-    const instruction::Instruction instr;
-    IFOut(const instruction::Instruction instr);
-    IFOut();
+      const instruction::Instruction instr;
+      IFOut(data32 addr, const instruction::Instruction instr);
+      IFOut();
   };
   /*
    * This represents the output of an Instruction Decode Phase. The first
@@ -60,7 +55,8 @@ namespace pipeline{
     public:
       const instruction::Instruction instr;
       const std::vector<mem::data32> regVals;
-      IDOut(instruction::Instruction instr, std::vector<mem::data32> regVals);
+      IDOut(data32 addr, instruction::Instruction instr, 
+          std::vector<mem::data32> regVals);
       IDOut();
   };
 
@@ -74,8 +70,8 @@ namespace pipeline{
       const instruction::Instruction instr;
       const std::vector<mem::data32> regVals;
       const mem::data64 comp;
-      EXOut(instruction::Instruction instr, std::vector<mem::data32> regVals,
-          mem::data64 comp);
+      EXOut(data32 addr, Instruction instr, vector<data32> regVals,
+          data64 comp);
       EXOut();
   };
 
@@ -91,15 +87,19 @@ namespace pipeline{
       const std::vector<mem::data32> regVals;
       const mem::data64 comp;
       const mem::data32 loaded;
-      MAOut(instruction::Instruction instr, std::vector<mem::data32> regVals,
-          mem::data64 comp, mem::data32 loaded);
+      MAOut(data32 addr, Instruction instr, vector<data32> regVals,
+          data64 comp, data32 loaded);
       MAOut();
   };
 
+  /*
+   * Note that the address for WBOut is meaningless because it is never used.
+   * here only for compatability
+   */
   class WBOut : public StageOut {
     public:
       const bool quit;
-      WBOut(bool quit);
+      WBOut(data32 addr, bool quit);
       WBOut();
   };
 
@@ -159,6 +159,9 @@ namespace pipeline{
       long nCyclesPassed;
 
     protected:
+      /* This is used by logging to log the current address. You always
+       * need to update this when you call execute (for bad design reasons)*/
+      data32 currentAddr;
       /* name of this PipelinePhase */
       const std::string name;
       /* The number of cycles left before freed */
@@ -241,7 +244,7 @@ namespace pipeline{
       /* Note that this object does not have responisbility to clean mem*/
       mem::MemoryUnit& mem;
       /* arguments for the current instruction (output from previous stage) */
-      PCOut* args;
+      StageOut* args;
 
     public:
 

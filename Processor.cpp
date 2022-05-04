@@ -16,9 +16,7 @@ using namespace mem;
 Processor5S::Processor5S(string name, MemoryUnit& mainMem, MemoryUnit& rf,
     data32 instrStart, string logFilename) : 
     mainMem{mainMem}, rf{rf}, acc{0}, currentCycle{0}, name{name}, 
-    pc{"PC",instrStart}{
-  //open the logfile 
-  log.open(logFilename);
+    pc{"PC",instrStart}, log{logFilename}{
   //set rf[0] = 0 cause MIPS hardwired
   rf.sw(0,0);
   //initialize the pipe
@@ -92,12 +90,12 @@ SizedArr<data32> MachineCodeFileReader::loadFile(string filename){
 
 //TODO really? this is the best way?
 ProgramLoader::ProgramLoader(MemoryUnit* mainMem, MemoryUnit* rf) : 
-  exeReader{}, p{"MIPSProcessor", *mainMem, *rf, 0, ""},
+  exeReader{}, p{"MIPSProcessor", *mainMem, *rf, 0, "pipeline.log"},
   mainMem{mainMem}, rf{rf} {}
 
 void ProgramLoader::loadProgram(string filename){
   SizedArr<data32> exeSized = exeReader.loadFile(filename);
-  mainMem->loadBlock(0, exeSized.arr, exeSized.size);
+  mainMem->storeBlock(0, exeSized.arr, exeSized.size);
   //set R$31 to return to the exit condition
   rf->sw(31,exeSized.size-1);
 }

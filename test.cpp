@@ -77,13 +77,13 @@ BOOST_AUTO_TEST_SUITE( TestMemory )
     size_t s3 = 50;
     MemoryUnit* m3 = new mem::DRAM(s3, "m3");
     data32 arr1[4] = {0,1,2,3};
-    m3->loadBlock(0, arr1, 4);
+    m3->storeBlock(0, arr1, 4);
     for(int i = 0; i < 4; i++){
       BOOST_CHECK_EQUAL(i, m3->ld(i));
     }
 
     data32 arr2[3] = {3,4,5};
-    m3->loadBlock(3, arr2, 3);
+    m3->storeBlock(3, arr2, 3);
     for(int i = 0; i < 3+3; i++){
       BOOST_CHECK_EQUAL(i, m3->ld(i));
     }
@@ -113,13 +113,13 @@ BOOST_AUTO_TEST_SUITE( TestMemory )
     size_t s3 = 50;
     MemoryUnit* m3 = new VirtualMem(new mem::DRAM(s3, "m3"));
     data32 arr1[4] = {0,1,2,3};
-    m3->loadBlock(0, arr1, 4);
+    m3->storeBlock(0, arr1, 4);
     for(int i = 0; i < 4; i++){
       BOOST_CHECK_EQUAL(i, m3->ld(i));
     }
 
     data32 arr2[3] = {3,4,5};
-    m3->loadBlock(3, arr2, 3);
+    m3->storeBlock(3, arr2, 3);
     for(int i = 0; i < 3+3; i++){
       BOOST_CHECK_EQUAL(i, m3->ld(i));
     }
@@ -144,7 +144,7 @@ BOOST_AUTO_TEST_SUITE( TestPipelinePhases )
     m1->sw(5,10);
     pipeline::PipelinePhase* p = new pipeline::InstructionFetch("IF", *m1, log);
     BOOST_CHECK_EQUAL(p->getName(), "IF");
-    pipeline::StageOut* args = new pipeline::PCOut(0);
+    pipeline::StageOut* args = new pipeline::StageOut(0);
     p->execute(&args);
     BOOST_CHECK(p->isBusy());
     p->updateCycle(1);
@@ -154,11 +154,11 @@ BOOST_AUTO_TEST_SUITE( TestPipelinePhases )
     // expected instructions to be fetched
     instruction::Instruction instr1 = instruction::Instruction(5);
     instruction::Instruction instr2 = instruction::Instruction(10);
-    pipeline::IFOut o1 = {instr1};
-    pipeline::IFOut o2 = {instr2};
+    pipeline::IFOut o1 = {0, instr1};
+    pipeline::IFOut o2 = {0, instr2};
     pipeline::IFOut* trueOut = (pipeline::IFOut*) (p->getOut());
     BOOST_CHECK_EQUAL(trueOut->instr.getInstr(), o1.instr.getInstr());
-    pipeline::StageOut* op2 = new pipeline::PCOut(5); //addr 5
+    pipeline::StageOut* op2 = new pipeline::StageOut(5); //addr 5
     delete trueOut;
     p->execute(&op2);
     p->updateCycle(1);
@@ -193,7 +193,7 @@ BOOST_AUTO_TEST_SUITE( TestPipelinePhases )
     unsigned int instructionVal = constructRInstr(rs, rt, rd, shamt, func);
     instruction::Instruction instr = instruction::Instruction(instructionVal);
     BOOST_CHECK(instr.toString().find("R-Type") != std::string::npos);
-    pipeline::StageOut* ifOut = new pipeline::IFOut(instr);
+    pipeline::StageOut* ifOut = new pipeline::IFOut(0, instr);
     std::cout << "is busy is " << id->isBusy() << std::endl;
     id->execute(&ifOut);
     id->updateCycle(1); //pass one timestep
@@ -217,7 +217,7 @@ BOOST_AUTO_TEST_SUITE( TestPipelinePhases )
         instrVal);
     instruction::Instruction instr2 = instruction::Instruction(instructionVal2);
     BOOST_CHECK(instr2.toString().find("I-Type") != std::string::npos);
-    pipeline::StageOut* ifOut2 = new pipeline::IFOut(instr2);
+    pipeline::StageOut* ifOut2 = new pipeline::IFOut(0, instr2);
     id->execute(&ifOut2);
     id->updateCycle(1); //pass one timestep
     //check for correct output
@@ -232,7 +232,7 @@ BOOST_AUTO_TEST_SUITE( TestPipelinePhases )
     unsigned int instructionVal3 = constructJInstr(opcode3, instrVal3);
     instruction::Instruction instr3 = instruction::Instruction(instructionVal3);
     BOOST_CHECK(instr3.getType().find("J-Type") != std::string::npos);
-    pipeline::StageOut* ifOut3 = new pipeline::IFOut(instr3);
+    pipeline::StageOut* ifOut3 = new pipeline::IFOut(0,instr3);
     id->execute(&ifOut3);
     id->updateCycle(1); //pass one timestep
     //check for correct output
@@ -252,7 +252,7 @@ BOOST_AUTO_TEST_SUITE( TestPipelinePhases )
     unsigned int instrVal = constructIInstr(opcode, 1, 2, val);
     instruction::Instruction instr = instruction::Instruction(instrVal);
     std::vector<mem::data32> regVals = {rs, rtOrRD};
-    pipeline::StageOut* idOut = new pipeline::IDOut(instr, regVals);
+    pipeline::StageOut* idOut = new pipeline::IDOut(0, instr, regVals);
     ex->execute(&idOut);
     ex->updateCycle(1);
     pipeline::EXOut* exOut = (pipeline::EXOut*) ex->getOut();
@@ -395,7 +395,7 @@ BOOST_AUTO_TEST_SUITE( TestPipelinePhases )
       unsigned int instructionVal = constructRInstr(0, 0, 0, shamt, func);
       instruction::Instruction instr = instruction::Instruction(instructionVal);
       std::vector<mem::data32> regVals = {rs, rt, rd};
-      pipeline::StageOut* idOut = new pipeline::IDOut(instr, regVals);
+      pipeline::StageOut* idOut = new pipeline::IDOut(0, instr, regVals);
       ex->execute(&idOut);
       ex->updateCycle(1);
       pipeline::EXOut* exOut = (pipeline::EXOut*) ex->getOut();
@@ -456,7 +456,7 @@ BOOST_AUTO_TEST_SUITE( TestPipelinePhases )
     BOOST_CHECK(testIInstr(ex,0x2b,0,1,1,2)); //1+1
     //j/jal (always return 0. nothing to do for ALU)
     BOOST_CHECK(testIInstr(ex,0x2,0,0,40,0)); 
-    PCOut* out = (PCOut*) pc.getOut();
+    StageOut* out = (StageOut*) pc.getOut();
     BOOST_CHECK(testIInstr(ex,0x3,0,0,0, out->addr + 2)); 
     delete out;
     //Objects get destructed when they go out of scope, but default destructor
@@ -478,7 +478,7 @@ BOOST_AUTO_TEST_SUITE( TestPipelinePhases )
     unsigned int instrVal = constructIInstr(0x23, 1, 2, 3);
     Instruction instr = Instruction(instrVal);
     vector<mem::data32> regVals = {rs, 0};
-    StageOut* exOut = new EXOut(instr, regVals, comp);
+    StageOut* exOut = new EXOut(0, instr, regVals, comp);
     ma->execute(&exOut);
     ma->updateCycle(1);
     pipeline::MAOut* maOut = (MAOut*) ma->getOut();
@@ -503,7 +503,7 @@ BOOST_AUTO_TEST_SUITE( TestPipelinePhases )
     unsigned int instrVal = constructIInstr(0x2b, 1, 2, 3);
     Instruction instr = Instruction(instrVal);
     vector<mem::data32> regVals = {rs, 0};
-    StageOut* exOut = new EXOut(instr, regVals, comp);
+    StageOut* exOut = new EXOut(0, instr, regVals, comp);
     ma->execute(&exOut);
     ma->updateCycle(1);
     pipeline::MAOut* maOut = (MAOut*) ma->getOut();
@@ -546,7 +546,7 @@ BOOST_AUTO_TEST_SUITE( TestPipelinePhases )
     unsigned int instrVal = constructRInstr(1/*rs*/,2/*rt*/,rdAddr,
         4/*shamt*/,func);
     Instruction instr = Instruction(instrVal);
-    StageOut* maOut = new MAOut(instr, {rs,1,2}, comp, 0);
+    StageOut* maOut = new MAOut(0, instr, {rs,1,2}, comp, 0);
     wb->execute(&maOut);
     wb->updateCycle(1);
     StageOut* wbOut = wb->getOut();
@@ -610,7 +610,7 @@ BOOST_AUTO_TEST_SUITE( TestPipelinePhases )
     unsigned int instrVal = constructIInstr(
         opcode,1/*rs*/,rtOrRdAddr,immediate);
     Instruction instr = Instruction(instrVal);
-    StageOut* maOut = new MAOut(instr, {1,2}, comp, loaded);
+    StageOut* maOut = new MAOut(0, instr, {1,2}, comp, loaded);
     wb->execute(&maOut);
     wb->updateCycle(1);
     StageOut* wbOut = wb->getOut();
@@ -630,9 +630,9 @@ BOOST_AUTO_TEST_SUITE( TestPipelinePhases )
 
   bool testPcIInstrWB(PipelinePhase* wb, const PC& pc, data16 immediate,
       data32 opcode, data64 comp){
-    PCOut* firstOut = (PCOut*) pc.getOut();
+    StageOut* firstOut = (StageOut*) pc.getOut();
     delete execIInstrWB(wb, opcode, 42, immediate, comp, 42);
-    PCOut* out = (PCOut*) pc.getOut();
+    StageOut* out = (StageOut*) pc.getOut();
     data32 result = out->addr;
     data32 expected = comp ? immediate : firstOut->addr; // If !comp, no change
     if(result != expected){
@@ -660,7 +660,7 @@ BOOST_AUTO_TEST_SUITE( TestPipelinePhases )
       data32 immediate, data64 comp){
     unsigned int instrVal = constructJInstr(opcode, immediate);
     Instruction instr = Instruction(instrVal);
-    StageOut* maOut = new MAOut(instr, {}, comp, 42);
+    StageOut* maOut = new MAOut(0, instr, {}, comp, 42);
     wb->execute(&maOut);
     wb->updateCycle(1);
     StageOut* wbOut = wb->getOut();
@@ -721,13 +721,13 @@ BOOST_AUTO_TEST_SUITE( TestPipelinePhases )
 
     //test a jump
     int addr = 0;
-    PCOut* out = (PCOut*) pc.getOut();
+    StageOut* out = (StageOut*) pc.getOut();
     delete execRInstrWB(wb,0,addr,0,0x8);
     BOOST_CHECK_EQUAL(addr, out->addr);
     delete out;
     //test a jalr
     delete execRInstrWB(wb, 30, 9999, 2, 0x9);
-    out = (PCOut*) pc.getOut();
+    out = (StageOut*) pc.getOut();
     BOOST_CHECK_EQUAL(9999, out->addr);
     delete out;
     BOOST_CHECK_EQUAL(2, rf->ld(30));
@@ -738,9 +738,9 @@ BOOST_AUTO_TEST_SUITE( TestPipelinePhases )
     //I instructions
     
     //store has no effects. Just don't crash. And we'll check the pc for giggles
-    PCOut* pcOut1 = (PCOut*) pc.getOut();
+    StageOut* pcOut1 = (StageOut*) pc.getOut();
     WBOut* wbOut = execIInstrWB(wb, 0x29, 42, 42, 42, 42);
-    PCOut* pcOut2 = (PCOut*) pc.getOut();
+    StageOut* pcOut2 = (StageOut*) pc.getOut();
     BOOST_CHECK_EQUAL(pcOut1->addr, pcOut2->addr);
     BOOST_CHECK_EQUAL(wbOut->quit, false);
     delete pcOut2;
@@ -767,7 +767,7 @@ BOOST_AUTO_TEST_SUITE( TestPipelinePhases )
     //Test some jump
     //JAL
     delete execJInstrWB(wb,0x3,32,40);
-    PCOut* pcOut = (PCOut*) pc.getOut();
+    StageOut* pcOut = (StageOut*) pc.getOut();
     data32 pcAddr = pcOut->addr;
     delete pcOut;
     BOOST_CHECK_EQUAL(32, pcAddr);
@@ -775,7 +775,7 @@ BOOST_AUTO_TEST_SUITE( TestPipelinePhases )
     //J
     pc.set(1<<31); 
     delete execJInstrWB(wb,0x2,99,42);
-    pcOut = (PCOut*) pc.getOut();
+    pcOut = (StageOut*) pc.getOut();
     pcAddr = pcOut->addr;
     delete pcOut;
     BOOST_CHECK_EQUAL((1<<31) + 99, pcAddr);
@@ -793,23 +793,23 @@ BOOST_AUTO_TEST_SUITE( TestPipelinePhases )
 
   BOOST_AUTO_TEST_CASE( TestPC ){
     PC pc = PC("PC", 0);
-    PCOut* out1 = (PCOut*) pc.getOut();
+    StageOut* out1 = (StageOut*) pc.getOut();
     BOOST_CHECK_EQUAL(out1->addr, 0);
     pc.set(60);
-    PCOut* out2 = (PCOut*) pc.getOut();
+    StageOut* out2 = (StageOut*) pc.getOut();
     BOOST_CHECK_EQUAL(out2->addr, 60);
     pc.inc(3);
-    PCOut* out3 = (PCOut*) pc.getOut();
+    StageOut* out3 = (StageOut*) pc.getOut();
     BOOST_CHECK_EQUAL(out3->addr, 63);
     
     //Test out the setting low bits
     pc.set(-1);
     pc.setLowBits(0, 28);
-    PCOut* out4 = (PCOut*) pc.getOut();
+    StageOut* out4 = (StageOut*) pc.getOut();
     BOOST_CHECK_EQUAL(out4->addr, 15 << 28);
     pc.set(1 << 31);
     pc.setLowBits(-1, 31);
-    PCOut* out5 = (PCOut*) pc.getOut();
+    StageOut* out5 = (StageOut*) pc.getOut();
     BOOST_CHECK_EQUAL(out5->addr, (data32) -1);
     
     delete out1;
@@ -832,7 +832,7 @@ BOOST_AUTO_TEST_SUITE( TestProcessor )
         1, 2, 3, 0, 0x21); //add R[3] = R[1]+R[2] (4+5 = 9)
     mem->sw(0, val);
 
-    Processor5S p = Processor5S("MIPSProcessor", *mem, *rf, 0, "pipeline.log");
+    Processor5S p("MIPSProcessor", *mem, *rf, 0, "pipeline.log");
     for(int i = 0; i < 6; i++)
       BOOST_CHECK(!p.updateCycle(1));
     BOOST_CHECK_EQUAL(rf->ld(3), 9);
@@ -848,7 +848,7 @@ BOOST_AUTO_TEST_SUITE( TestProcessor )
       constructRInstr(0,0,0,0,0xc) //syscall kill
     };
     //load in the instruction sequence
-    mem->loadBlock(0, instrs, 9);
+    mem->storeBlock(0, instrs, 9);
     //load some values into mem for the load
     mem->sw(90, 3);
     mem->sw(91, 4);

@@ -13,28 +13,32 @@ using namespace mem;
 namespace pipeline{
 
   //Out classes 
-  PCOut::PCOut(unsigned int addr) : addr{addr}{}
-  PCOut::PCOut() : addr{0}{}
+  StageOut::StageOut(data32 addr) : addr{addr}{}
+  StageOut::StageOut() : addr{(data32)-1}{}
 
-  IFOut::IFOut(const instruction::Instruction instr) : 
+  IFOut::IFOut(data32 addr, const instruction::Instruction instr) : StageOut{addr},
     instr{instruction::Instruction(instr)} {};
   IFOut::IFOut() : instr{instruction::Instruction(0)}{};
 
-  IDOut::IDOut(instruction::Instruction instr, std::vector<mem::data32> regVals)
-    : instr{instr}, regVals{regVals}{};
+  IDOut::IDOut(data32 addr,
+      instruction::Instruction instr, std::vector<mem::data32> regVals)
+    : StageOut{addr}, instr{instr}, regVals{regVals}{};
   IDOut::IDOut(): instr{instruction::Instruction(0)}, regVals(0){};
 
-  EXOut::EXOut(instruction::Instruction instr, std::vector<mem::data32> regVals,
-      mem::data64 comp) : instr{instr}, regVals{regVals}, comp{comp}{};
+  EXOut::EXOut(data32 addr,
+      instruction::Instruction instr, std::vector<mem::data32> regVals,
+      mem::data64 comp) : StageOut{addr}, instr{instr}, regVals{regVals}, 
+      comp{comp}{};
   EXOut::EXOut() : instr{instruction::Instruction(0)}, regVals(0), comp{0}{};
 
-  MAOut::MAOut(instruction::Instruction instr, std::vector<mem::data32> regVals,
-    mem::data64 comp, mem::data32 loaded) : instr{instr}, regVals{regVals}, 
-    comp{comp}, loaded{loaded}{};
+  MAOut::MAOut(data32 addr,
+      instruction::Instruction instr, std::vector<mem::data32> regVals,
+    mem::data64 comp, mem::data32 loaded) : StageOut{addr}, instr{instr}, 
+    regVals{regVals}, comp{comp}, loaded{loaded}{};
   MAOut::MAOut() : instr{instruction::Instruction(0)}, regVals(0), comp{0},
     loaded{0}{};
   
-  WBOut::WBOut(bool quit) : quit{quit}{}
+  WBOut::WBOut(data32 addr, bool quit) : StageOut{addr}, quit{quit}{}
   WBOut::WBOut() : quit{false}{}
 
   bool PipelinePhase::checkInvariants() const{
@@ -91,6 +95,9 @@ namespace pipeline{
       cyclesToSet = 0;
     }
     setCyclesRemaining(cyclesToSet);
+    nCyclesPassed += cycleChange;
+    log << "cycle:" << nCyclesPassed << "\tname:" << getName() << 
+      "\taddr:" << currentAddr << endl;
   }
 
 
@@ -109,12 +116,13 @@ namespace pipeline{
     //Delete the old arguments
     delete this->args;
     //save the pointer to the arguments
-    this->args = (PCOut*) (*args);
+    this->args = (*args);
     //Nullify the old pointer so user can't use it anymore
     *args = nullptr;
     setCyclesRemaining(1);
     BOOST_LOG_TRIVIAL(debug) << "<<" + getName() + ">> " << "executing args"
       " with address " << this->args->addr << std::endl;
+    currentAddr = (this->args == nullptr ? (data32) -1 : this->args->addr);
   }
 
   StageOut* InstructionFetch::getOut(){
@@ -126,7 +134,7 @@ namespace pipeline{
         unsigned int addr = args->addr;
         mem::data32 instrInt = mem.ld(addr);
         instruction::Instruction instr = instruction::Instruction(instrInt);
-        out = new IFOut(instr);
+        out = new IFOut(addr, instr);
       }
     }
     return out;
@@ -163,6 +171,7 @@ namespace pipeline{
       " with instruction " << 
       (this->args == nullptr ? "null" : this->args->instr.toString())
       << std::endl;
+    currentAddr = (this->args == nullptr ? (data32) -1 : this->args->addr);
   }
 
   StageOut* InstructionDecode::getOut(){
@@ -195,7 +204,7 @@ namespace pipeline{
           //Is J-Type
           regVals = std::vector<mem::data32>(0);
         }
-        out = new IDOut(args->instr, regVals);
+        out = new IDOut(args->addr, args->instr, regVals);
       }
     }
     return out;
@@ -223,6 +232,7 @@ namespace pipeline{
       " with instruction " << 
       (this->args == nullptr ? "null" : this->args->instr.toString())
       << std::endl;
+    currentAddr = (this->args == nullptr ? (data32) -1 : this->args->addr);
   }
 
   StageOut* Execute::getOut(){
@@ -296,7 +306,7 @@ namespace pipeline{
           } else if(func == "srav"){ 
             comp = (mem::data32) (((signedData32) rs) >> (rt & 0b11111));
           } else if(func == "jalr"){ 
-            PCOut* out = (PCOut*) pc.getOut();
+            StageOut* out = pc.getOut();
             data32 pcAddr = out->addr;
             delete out;
             comp = pcAddr + 2;
@@ -355,7 +365,7 @@ namespace pipeline{
         }
         else if (instrType.find("J-Type") != std::string::npos){
           //get current pc
-          PCOut* out = (PCOut*) pc.getOut();
+          StageOut* out = pc.getOut();
           data32 pcAddr = out->addr;
           delete out;
           if (instrType == "J-Type:jal"){
@@ -373,7 +383,7 @@ namespace pipeline{
         }
         //You've done the heavy lifting at this point. Now you just assemble the
         //struct
-         out = new EXOut(args->instr, args->regVals, comp);
+         out = new EXOut(args->addr, args->instr, args->regVals, comp);
       }
     }
     return out;
@@ -402,6 +412,7 @@ namespace pipeline{
       " with instruction " << 
       (this->args == nullptr ? "null" : this->args->instr.toString())
       << std::endl;
+    currentAddr = (this->args == nullptr ? (data32) -1 : this->args->addr);
   }
 
   StageOut* MemoryAccess::getOut(){
@@ -419,7 +430,8 @@ namespace pipeline{
         } else if (instrType == "I-Type:lw"){
           loaded = mem.ld((mem::data32) args->comp);
         }
-        out = new MAOut(args->instr, args->regVals, args->comp, loaded);
+        out = new MAOut(args->addr, args->instr, args->regVals, args->comp,
+            loaded);
       }
     }
     return out;
@@ -449,13 +461,13 @@ namespace pipeline{
       " with instruction " << 
       (this->args == nullptr ? "null" : this->args->instr.toString())
       << std::endl;
-
+    currentAddr = (this->args == nullptr ? (data32) -1 : this->args->addr);
   }
 
   //TODO this is terribly named, you don't really want to get out here.
   //There is no out
   StageOut* WriteBack::getOut(){
-    StageOut* out = new WBOut(false); // assume not quiting
+    StageOut* out = new WBOut((data32) -1, false); // assume not quiting
     static const vector<string> simpleRInstrs = {
       "sub", "subu", "addu", "add", "sll", "sllv", "srl", "srlv", "and", "or",
       "xor", "nor", "srav","sra"
@@ -492,7 +504,7 @@ namespace pipeline{
         if(func == "syscall"){
           //quiting 
           delete out;
-          out = new WBOut(true);
+          out = new WBOut((data32) -1, true);
         } else if(isSimple){
           rf.sw(rdAddr, comp);
         } else if(func == "jr"){ 
@@ -592,7 +604,7 @@ namespace pipeline{
   PC::PC(string name, data32 startIndex) : name{ name }, index{startIndex} {}
   
   StageOut* PC::getOut() const {
-    return new PCOut(index);
+    return new StageOut(index);
   }
 
   void PC::set(data32 index) {

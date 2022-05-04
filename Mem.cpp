@@ -91,7 +91,7 @@ namespace mem{
     return size;
   }
 
-  void DRAM::loadBlock(data32 addr, data32* words, size_t size){
+  void DRAM::storeBlock(data32 addr, data32* words, size_t size){
     BOOST_LOG_TRIVIAL(debug) << "<<" << getName() << ">>" << " loading block of" 
       << size << " words starting at mem[" << addr << "]" << endl;
     copy(words, &words[size], &mem[addr]);
@@ -124,7 +124,7 @@ namespace mem{
     mem->sw(lookup(addr), word);
   }
 
-  void VirtualMem::loadBlock(data32 addr, data32* words, size_t size){
+  void VirtualMem::storeBlock(data32 addr, data32* words, size_t size){
     for(int i = 0; i < size; i++){
       sw(addr+i, words[i]);
     }
