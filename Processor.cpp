@@ -24,7 +24,7 @@ Processor5S::Processor5S(string name, MemoryUnit& mainMem, MemoryUnit& rf,
   pipe[0] = new InstructionFetch("IF", mainMem, log);
   pipe[1] = new InstructionDecode("ID", rf, log);
   pipe[2] = new Execute("EX", pc, log);
-  pipe[3] = new MemoryAccess("ID", mainMem, log);
+  pipe[3] = new MemoryAccess("MA", mainMem, log);
   pipe[4] = new WriteBack("WB", rf, acc, pc, log);
 }
 

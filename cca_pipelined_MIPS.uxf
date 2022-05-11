@@ -28,359 +28,233 @@ fontsize=10
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>1078</x>
-      <y>0</y>
+      <x>868</x>
+      <y>840</y>
       <w>490</w>
       <h>294</h>
     </coordinates>
     <panel_attributes>/PipelinePhase/
 --
 #name: String
-#instr: String
-#args: void* //struct of output prev stage
+#log: ofstream&amp;
 --
-#PipelinePhase(name: string): void
-#setCycle(cycle: int): void
+#PipelinePhase(name: string, log:ofstream&amp;)
+#setCycle(cycle: int)
 +isBusy(): bool
-/+getAllHazards(): vector&lt;Hazard&gt;/
-+updateCycle(cycleChange: int): void
-+execute(args: void*): void
-/+getOut(): void*/</panel_attributes>
++updateCycle(cycleChange: int)
++execute(args:StageOut**)
+/+getOut(): StageOut*/</panel_attributes>
     <additional_attributes/>
   </element>
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>490</x>
-      <y>392</y>
-      <w>336</w>
-      <h>196</h>
+      <x>84</x>
+      <y>1232</y>
+      <w>448</w>
+      <h>182</h>
     </coordinates>
-    <panel_attributes>IF
+    <panel_attributes>InstructionFetch
 --
--mem: MemoryUnit
+-mem: MemoryUnit&amp;
 --
-+InstructionFetch(name: string,
-  mem:MemoryUnit)
-+updateInstr(args: void*): void
-+getOut(): void*</panel_attributes>
++InstructionFetch(name:string,
+  mem:MemoryUnit&amp;, log:ofstream&amp;)</panel_attributes>
     <additional_attributes/>
   </element>
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>924</x>
-      <y>392</y>
-      <w>238</w>
-      <h>126</h>
+      <x>588</x>
+      <y>1232</y>
+      <w>350</w>
+      <h>168</h>
     </coordinates>
-    <panel_attributes>ID
+    <panel_attributes>InstructionDecode
 --
--rf: RegisterFile
+-rf: MemoryUnit&amp;
 --
-</panel_attributes>
++InstructionDecode(name:string,
+   rf:MemoryUnit&amp;, log:ofstream&amp;)</panel_attributes>
     <additional_attributes/>
   </element>
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>1232</x>
-      <y>392</y>
-      <w>140</w>
-      <h>42</h>
-    </coordinates>
-    <panel_attributes>EX</panel_attributes>
-    <additional_attributes/>
-  </element>
-  <element>
-    <id>UMLClass</id>
-    <coordinates>
-      <x>1414</x>
-      <y>392</y>
-      <w>210</w>
-      <h>140</h>
-    </coordinates>
-    <panel_attributes>MA
---
--mem: MemoryUnit</panel_attributes>
-    <additional_attributes/>
-  </element>
-  <element>
-    <id>UMLClass</id>
-    <coordinates>
-      <x>1736</x>
-      <y>392</y>
-      <w>210</w>
-      <h>140</h>
-    </coordinates>
-    <panel_attributes>WB
---
--rf: RegisterFile</panel_attributes>
-    <additional_attributes/>
-  </element>
-  <element>
-    <id>Relation</id>
-    <coordinates>
-      <x>546</x>
-      <y>280</y>
-      <w>770</w>
-      <h>140</h>
-    </coordinates>
-    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
-    <additional_attributes>530.0;10.0;10.0;80.0</additional_attributes>
-  </element>
-  <element>
-    <id>Relation</id>
-    <coordinates>
-      <x>966</x>
-      <y>280</y>
-      <w>364</w>
-      <h>140</h>
-    </coordinates>
-    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
-    <additional_attributes>240.0;10.0;10.0;80.0</additional_attributes>
-  </element>
-  <element>
-    <id>Relation</id>
-    <coordinates>
-      <x>1288</x>
-      <y>266</y>
-      <w>42</w>
+      <x>980</x>
+      <y>1232</y>
+      <w>294</w>
       <h>154</h>
     </coordinates>
-    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
-    <additional_attributes>10.0;10.0;10.0;90.0</additional_attributes>
+    <panel_attributes>Execute
+--
+-pc: PC&amp;
+--
++Execute(name:string,
+   pc:PC&amp;, log:ofstream&amp;)</panel_attributes>
+    <additional_attributes/>
   </element>
   <element>
-    <id>Relation</id>
-    <coordinates>
-      <x>1288</x>
-      <y>280</y>
-      <w>224</w>
-      <h>140</h>
-    </coordinates>
-    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
-    <additional_attributes>10.0;10.0;140.0;80.0</additional_attributes>
-  </element>
-  <element>
-    <id>Relation</id>
+    <id>UMLClass</id>
     <coordinates>
       <x>1302</x>
-      <y>280</y>
-      <w>504</w>
+      <y>1232</y>
+      <w>308</w>
+      <h>224</h>
+    </coordinates>
+    <panel_attributes>MemoryAccess
+--
+-mem: MemoryUnit&amp;
+--
++MemoryAccess(name:string,
+   mem:MemoryUnit&amp;, 
+   log:ofstream&amp;)</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1652</x>
+      <y>1232</y>
+      <w>448</w>
+      <h>224</h>
+    </coordinates>
+    <panel_attributes>WriteBack
+--
+-rf:MemoryUnit&amp;
+-pc:PC&amp;
+-acc:data64&amp;
+--
++WriteBack(name:string, rf:MemoryUnit&amp;,
+   acc:data64&amp;, pc:PC&amp;, log:ofstream&amp;)</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>140</x>
+      <y>1120</y>
+      <w>966</w>
       <h>140</h>
     </coordinates>
     <panel_attributes>lt=&lt;&lt;-</panel_attributes>
-    <additional_attributes>10.0;10.0;340.0;80.0</additional_attributes>
-  </element>
-  <element>
-    <id>UMLClass</id>
-    <coordinates>
-      <x>2100</x>
-      <y>56</y>
-      <w>140</w>
-      <h>42</h>
-    </coordinates>
-    <panel_attributes>Hazard</panel_attributes>
-    <additional_attributes/>
-  </element>
-  <element>
-    <id>UMLClass</id>
-    <coordinates>
-      <x>2030</x>
-      <y>140</y>
-      <w>140</w>
-      <h>42</h>
-    </coordinates>
-    <panel_attributes>DataHazard</panel_attributes>
-    <additional_attributes/>
-  </element>
-  <element>
-    <id>UMLClass</id>
-    <coordinates>
-      <x>2184</x>
-      <y>140</y>
-      <w>154</w>
-      <h>42</h>
-    </coordinates>
-    <panel_attributes>ControlHazard</panel_attributes>
-    <additional_attributes/>
+    <additional_attributes>670.0;10.0;10.0;80.0</additional_attributes>
   </element>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>2086</x>
-      <y>84</y>
-      <w>112</w>
-      <h>84</h>
+      <x>672</x>
+      <y>1120</y>
+      <w>448</w>
+      <h>140</h>
     </coordinates>
     <panel_attributes>lt=&lt;&lt;-</panel_attributes>
-    <additional_attributes>60.0;10.0;10.0;40.0</additional_attributes>
+    <additional_attributes>300.0;10.0;10.0;80.0</additional_attributes>
   </element>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>2156</x>
-      <y>84</y>
-      <w>126</w>
-      <h>84</h>
+      <x>1078</x>
+      <y>1120</y>
+      <w>42</w>
+      <h>140</h>
     </coordinates>
     <panel_attributes>lt=&lt;&lt;-</panel_attributes>
-    <additional_attributes>10.0;10.0;70.0;40.0</additional_attributes>
+    <additional_attributes>10.0;10.0;10.0;80.0</additional_attributes>
   </element>
   <element>
-    <id>UMLNote</id>
+    <id>Relation</id>
     <coordinates>
-      <x>1848</x>
-      <y>28</y>
-      <w>196</w>
-      <h>98</h>
+      <x>1078</x>
+      <y>1120</y>
+      <w>322</w>
+      <h>140</h>
     </coordinates>
-    <panel_attributes>No Structural cause not Superscaler
-bg=blue</panel_attributes>
-    <additional_attributes/>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;210.0;80.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1092</x>
+      <y>1120</y>
+      <w>700</w>
+      <h>140</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;480.0;80.0</additional_attributes>
   </element>
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>406</x>
-      <y>1078</y>
-      <w>336</w>
-      <h>280</h>
+      <x>770</x>
+      <y>1736</y>
+      <w>392</w>
+      <h>154</h>
     </coordinates>
     <panel_attributes>DRAM
 --
--mem: int //32bit
--size: size_t
---
-+MemoryUnit(size: size_t)
-+MemoryUnit(size: size_t,
-  mem: int*)
-+ld(addr: unsigned int): int
-+sw(addr: unsigned int, word: int): void
-+shallowCopy(): MemoryUnit</panel_attributes>
-    <additional_attributes/>
-  </element>
-  <element>
-    <id>UMLNote</id>
-    <coordinates>
-      <x>266</x>
-      <y>392</y>
-      <w>196</w>
-      <h>98</h>
-    </coordinates>
-    <panel_attributes>Mem of IF must
-be same as mem
-of MA
-bg=blue</panel_attributes>
+-mem: data32[]
+-size: size_t</panel_attributes>
     <additional_attributes/>
   </element>
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>840</x>
-      <y>1078</y>
-      <w>406</w>
-      <h>294</h>
-    </coordinates>
-    <panel_attributes>Cache
---
--mem: MemoryUnit //32bit
--associativity: size_t
--size: size_t
--blockSize: size_t
--nSets
---
-+Cache(size: size_t, associtivity: size_t,
-  blockSize: size_t, nSets: size_t,
-  mem: MemoryUnit)
-+ld(addr: int): int
-+sw(addr: int, word: int): void
-</panel_attributes>
-    <additional_attributes/>
-  </element>
-  <element>
-    <id>UMLNote</id>
-    <coordinates>
-      <x>0</x>
-      <y>1078</y>
-      <w>378</w>
+      <x>434</x>
+      <y>1470</y>
+      <w>644</w>
       <h>182</h>
     </coordinates>
-    <panel_attributes>An OS is beyond the scope of this
-project. There will be no OSing.
-Therefore, it is up to the user to load the appropriate instructions into the program counter and make sure they don't do anything stupid like overwrite data with instructions.
-bg=blue</panel_attributes>
+    <panel_attributes>/MemoryUnit/
+--
++ld(addr: data32): data32
++sw(addr: data32, word: data32)
++storeBlock(addr: data32, words: data32[], size: size_t)</panel_attributes>
     <additional_attributes/>
   </element>
   <element>
-    <id>UMLClass</id>
+    <id>Relation</id>
     <coordinates>
       <x>644</x>
-      <y>868</y>
-      <w>350</w>
-      <h>126</h>
-    </coordinates>
-    <panel_attributes>&lt;&lt;Interface&gt;&gt;
-MemoryUnit
---
-+ld(addr: unisgned int): int
-+sw(addr: unsigned int, word: int): void</panel_attributes>
-    <additional_attributes/>
-  </element>
-  <element>
-    <id>Relation</id>
-    <coordinates>
-      <x>546</x>
-      <y>980</y>
-      <w>280</w>
+      <y>1638</y>
+      <w>308</w>
       <h>126</h>
     </coordinates>
     <panel_attributes>lt=&lt;&lt;.
 </panel_attributes>
-    <additional_attributes>180.0;10.0;10.0;70.0</additional_attributes>
+    <additional_attributes>10.0;10.0;200.0;70.0</additional_attributes>
   </element>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>826</x>
-      <y>980</y>
-      <w>252</w>
+      <x>476</x>
+      <y>1638</y>
+      <w>210</w>
       <h>126</h>
     </coordinates>
     <panel_attributes>lt=&lt;&lt;.
 </panel_attributes>
-    <additional_attributes>10.0;10.0;160.0;70.0</additional_attributes>
+    <additional_attributes>130.0;10.0;10.0;70.0</additional_attributes>
   </element>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>728</x>
-      <y>1204</y>
-      <w>140</w>
-      <h>42</h>
+      <x>224</x>
+      <y>1400</y>
+      <w>238</w>
+      <h>126</h>
     </coordinates>
     <panel_attributes>lt=&lt;&lt;&lt;&lt;-</panel_attributes>
-    <additional_attributes>80.0;10.0;10.0;10.0</additional_attributes>
-  </element>
-  <element>
-    <id>Relation</id>
-    <coordinates>
-      <x>630</x>
-      <y>574</y>
-      <w>42</w>
-      <h>406</h>
-    </coordinates>
-    <panel_attributes>lt=&lt;&lt;&lt;&lt;-</panel_attributes>
-    <additional_attributes>10.0;10.0;10.0;90.0;10.0;270.0</additional_attributes>
+    <additional_attributes>10.0;10.0;10.0;70.0;150.0;70.0</additional_attributes>
   </element>
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>2632</x>
-      <y>714</y>
-      <w>168</w>
-      <h>126</h>
+      <x>2072</x>
+      <y>952</y>
+      <w>308</w>
+      <h>140</h>
     </coordinates>
     <panel_attributes>IFOut
 --
@@ -390,9 +264,9 @@ MemoryUnit
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>3122</x>
-      <y>714</y>
-      <w>224</w>
+      <x>2562</x>
+      <y>966</y>
+      <w>420</w>
       <h>154</h>
     </coordinates>
     <panel_attributes>EXOut
@@ -405,10 +279,10 @@ MemoryUnit
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>2842</x>
-      <y>714</y>
-      <w>238</w>
-      <h>126</h>
+      <x>2324</x>
+      <y>1176</y>
+      <w>350</w>
+      <h>140</h>
     </coordinates>
     <panel_attributes>IDOut
 --
@@ -419,10 +293,10 @@ MemoryUnit
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>3388</x>
-      <y>714</y>
-      <w>238</w>
-      <h>168</h>
+      <x>2870</x>
+      <y>1176</y>
+      <w>378</w>
+      <h>140</h>
     </coordinates>
     <panel_attributes>MAOut
 --
@@ -435,53 +309,109 @@ MemoryUnit
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>896</x>
-      <y>504</y>
-      <w>154</w>
-      <h>392</h>
+      <x>686</x>
+      <y>1386</y>
+      <w>98</w>
+      <h>112</h>
     </coordinates>
     <panel_attributes>lt=&lt;&lt;&lt;&lt;-</panel_attributes>
-    <additional_attributes>90.0;10.0;90.0;200.0;10.0;200.0;10.0;260.0</additional_attributes>
+    <additional_attributes>50.0;10.0;50.0;60.0;10.0;60.0</additional_attributes>
   </element>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>980</x>
-      <y>518</y>
-      <w>644</w>
-      <h>420</h>
-    </coordinates>
-    <panel_attributes>lt=&lt;&lt;&lt;&lt;-</panel_attributes>
-    <additional_attributes>440.0;10.0;440.0;280.0;10.0;280.0</additional_attributes>
-  </element>
-  <element>
-    <id>Relation</id>
-    <coordinates>
-      <x>980</x>
-      <y>518</y>
-      <w>952</w>
-      <h>420</h>
-    </coordinates>
-    <panel_attributes>lt=&lt;&lt;&lt;&lt;-</panel_attributes>
-    <additional_attributes>660.0;10.0;660.0;280.0;10.0;280.0</additional_attributes>
-  </element>
-  <element>
-    <id>UMLNote</id>
-    <coordinates>
-      <x>1302</x>
-      <y>1078</y>
-      <w>196</w>
+      <x>1064</x>
+      <y>1442</y>
+      <w>448</w>
       <h>98</h>
     </coordinates>
-    <panel_attributes>TODFO registers aren't memory
-bg=blue</panel_attributes>
-    <additional_attributes/>
+    <panel_attributes>lt=&lt;&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>300.0;10.0;300.0;50.0;10.0;50.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1064</x>
+      <y>1442</y>
+      <w>854</w>
+      <h>98</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>590.0;10.0;590.0;50.0;10.0;50.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>2156</x>
+      <y>868</y>
+      <w>224</w>
+      <h>112</h>
+    </coordinates>
+    <panel_attributes>lt=-</panel_attributes>
+    <additional_attributes>140.0;10.0;10.0;10.0;10.0;60.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>2436</x>
+      <y>868</y>
+      <w>364</w>
+      <h>336</h>
+    </coordinates>
+    <panel_attributes>lt=-</panel_attributes>
+    <additional_attributes>240.0;10.0;10.0;10.0;10.0;220.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>2660</x>
+      <y>868</y>
+      <w>42</w>
+      <h>126</h>
+    </coordinates>
+    <panel_attributes>lt=-</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;70.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>3066</x>
+      <y>868</y>
+      <w>42</w>
+      <h>336</h>
+    </coordinates>
+    <panel_attributes>lt=-</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;220.0</additional_attributes>
   </element>
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>2954</x>
-      <y>420</y>
+      <x>3220</x>
+      <y>952</y>
+      <w>308</w>
+      <h>140</h>
+    </coordinates>
+    <panel_attributes>WBOut
+--
++quit: bool</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>3318</x>
+      <y>868</y>
+      <w>42</w>
+      <h>112</h>
+    </coordinates>
+    <panel_attributes>lt=-</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;60.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>2632</x>
+      <y>714</y>
       <w>294</w>
       <h>98</h>
     </coordinates>
@@ -491,47 +421,198 @@ bg=blue</panel_attributes>
     <additional_attributes/>
   </element>
   <element>
-    <id>Relation</id>
+    <id>UMLNote</id>
     <coordinates>
-      <x>2716</x>
-      <y>504</y>
-      <w>406</w>
-      <h>238</h>
+      <x>2996</x>
+      <y>728</y>
+      <w>196</w>
+      <h>98</h>
     </coordinates>
-    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
-    <additional_attributes>270.0;10.0;10.0;150.0</additional_attributes>
+    <panel_attributes>The StageOut's are used to represent output from a stage in the pipeline.
+bg=blue</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>350</x>
+      <y>1736</y>
+      <w>378</w>
+      <h>154</h>
+    </coordinates>
+    <panel_attributes>VirtualMem
+--
+-addrLookup: map&lt;data32,data32&gt;
+-mem: MemoryUnit*</panel_attributes>
+    <additional_attributes/>
   </element>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>2954</x>
-      <y>504</y>
-      <w>168</w>
-      <h>238</h>
+      <x>476</x>
+      <y>1638</y>
+      <w>42</w>
+      <h>126</h>
     </coordinates>
-    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
-    <additional_attributes>100.0;10.0;10.0;150.0</additional_attributes>
+    <panel_attributes>lt=&lt;&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;70.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1554</x>
+      <y>854</y>
+      <w>434</w>
+      <h>252</h>
+    </coordinates>
+    <panel_attributes>PC
+--
+-index: data32
+--
++PC(name:string, startIndex:data32)
++getOut(): StageOut*
++set(index: data32)
++setLowBits(index:data32, nBits:data32)
++inc(inc:data32)</panel_attributes>
+    <additional_attributes/>
   </element>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>3080</x>
-      <y>504</y>
-      <w>182</w>
-      <h>238</h>
+      <x>1120</x>
+      <y>1092</y>
+      <w>728</w>
+      <h>168</h>
     </coordinates>
-    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
-    <additional_attributes>10.0;10.0;110.0;150.0</additional_attributes>
+    <panel_attributes>lt=&lt;&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>500.0;10.0;500.0;50.0;10.0;50.0;10.0;100.0;10.0;50.0;500.0;50.0;500.0;100.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1302</x>
+      <y>0</y>
+      <w>504</w>
+      <h>322</h>
+    </coordinates>
+    <panel_attributes>ProgramLoader
+--
+-exeReader: MachineCodeFileReader
+-p:Processor5S
+-mainMem:MemoryUnit*
+-rf:MemoryUnit*
+--
++ProgramLoader(mainMem:MemoryUnit*,
+   rf:MemoryUnit*)
++loadProgram(string filename)
++run()</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1652</x>
+      <y>476</y>
+      <w>378</w>
+      <h>196</h>
+    </coordinates>
+    <panel_attributes>MachineCodeFileReader
+--
++loadFile(string Filename): 
+    SizedArr&lt;data32&gt;</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>840</x>
+      <y>378</y>
+      <w>476</w>
+      <h>364</h>
+    </coordinates>
+    <panel_attributes>Processor5S
+--
+-pipe:array&lt;PipelinePhase*,5&gt;
+-pc:PC
+-rf:MemoryUnit&amp;
+-mainMem:MemoryUnit&amp;
+-acc:data64&amp;
+-log:ofstream
+--
++Processor5S(name:string,
+   mainMem:MemoryUnit&amp;,
+   rf:MemoryUnit&amp;, instrStart:data32,
+   logFilename:string)
++updateCycle(timeToAdvance:int):bool
++start(startI:int)
+
+</panel_attributes>
+    <additional_attributes/>
   </element>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>3080</x>
-      <y>504</y>
-      <w>448</w>
-      <h>238</h>
+      <x>0</x>
+      <y>560</y>
+      <w>868</w>
+      <h>1008</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>600.0;10.0;420.0;10.0;420.0;360.0;10.0;360.0;10.0;700.0;310.0;700.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>574</x>
+      <y>56</y>
+      <w>756</w>
+      <h>546</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>520.0;10.0;10.0;10.0;10.0;370.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1302</x>
+      <y>308</y>
+      <w>378</w>
+      <h>294</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>90.0;10.0;90.0;190.0;10.0;190.0;250.0;190.0;90.0;190.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1064</x>
+      <y>728</y>
+      <w>42</w>
+      <h>140</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;80.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>2156</x>
+      <y>868</y>
+      <w>1204</w>
+      <h>42</h>
+    </coordinates>
+    <panel_attributes>lt=-</panel_attributes>
+    <additional_attributes>840.0;10.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>2772</x>
+      <y>798</y>
+      <w>42</w>
+      <h>112</h>
     </coordinates>
     <panel_attributes>lt=&lt;&lt;-</panel_attributes>
-    <additional_attributes>10.0;10.0;300.0;150.0</additional_attributes>
+    <additional_attributes>10.0;10.0;10.0;60.0</additional_attributes>
   </element>
 </diagram>
