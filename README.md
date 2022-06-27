@@ -1,7 +1,7 @@
 # CCA-MIPS
 Cycle Accurate Simulator for the MIPS architecture. This is an honors project
 for the Whitman Computer Science major. The technical report is labeled,
-`kaplannpHonorsThesis11May22.pdf`
+`kaplannpHonorsThesis11May22.pdf`  
 #References
 + https://www.dsi.unive.it/~gasparetto/materials/MIPS_Instruction_Set.pdf //nice
   reference for MIPS instructions
